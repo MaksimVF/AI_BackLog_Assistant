@@ -20,12 +20,15 @@ class ReflectionOutput(BaseModel):
 class ReflectionAgent(Agent):
     """Agent that performs deep analysis of input data to determine context, required agents, and novelty"""
 
-    def __init__(self, memory: Optional[WeaviateMemory] = None):
+    def __init__(self, memory: Optional[WeaviateMemory] = None, **kwargs):
+        # Initialize CrewAI Agent with our custom properties
         super().__init__(
-            name="ReflectionAgent",
-            description="Performs deep analysis of input data to determine context, required agents, and novelty",
-            input_schema=ReflectionInput,
-            output_schema=ReflectionOutput
+            role="Reflection Analyst",
+            goal="Понять суть входной информации, определить тип данных и требуемые этапы обработки",
+            backstory="Ты искусственный специалист, который классифицирует ввод пользователя и выстраивает стратегию анализа.",
+            tools=[],  # позже можно подключить tool для Weaviate
+            allow_delegation=False,
+            **kwargs
         )
         self.memory = memory or WeaviateMemory()
 
@@ -176,3 +179,28 @@ class ReflectionAgent(Agent):
             ReflectionOutput: Complete analysis results
         """
         return self.execute(input_data)
+
+    def process_task(self, task_description: str, input_data: str) -> str:
+        """
+        Process a task from CrewAI framework
+
+        Args:
+            task_description: Description of the task
+            input_data: Input data as string (could be JSON)
+
+        Returns:
+            JSON string with analysis results
+        """
+        # Parse input data
+        try:
+            input_dict = json.loads(input_data)
+            reflection_input = ReflectionInput(**input_dict)
+        except:
+            # Fallback to simple text input
+            reflection_input = ReflectionInput(content=input_data)
+
+        # Execute analysis
+        result = self.execute(reflection_input)
+
+        # Convert to JSON string
+        return result.json()
