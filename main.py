@@ -1,47 +1,62 @@
-from agents.reflection_agent import ReflectionAgent, ReflectionInput
-from memory.weaviate_client import WeaviateMemory
-from schemas import VideoData, AudioData, ImageData, DocumentData, TextData
+from crewai import Crew, Task
+from agents.input_classifier_agent import input_classifier_agent
+from agents.modality_detector_agent import modality_detector_agent
+from agents.text_processor_agent import text_processor_agent
+from agents.audio_transcriber_agent import audio_transcriber_agent
+from agents.video_analyzer_agent import video_analyzer_agent
+from agents.image_analyzer_agent import image_analyzer_agent
 
 def main():
-    # Initialize components
-    memory = WeaviateMemory()
-    reflection_agent = ReflectionAgent(memory=memory)
+    print("🚀 Запуск системы мультиагентов")
+    print("=" * 50)
 
-    # Example usage
-    print("Добро пожаловать в мультиагентную систему!")
+    # Создаём команду агентов
+    agents = [
+        input_classifier_agent,
+        modality_detector_agent,
+        text_processor_agent,
+        audio_transcriber_agent,
+        video_analyzer_agent,
+        image_analyzer_agent
+    ]
 
-    # Create sample text data for reflection agent (in Russian)
-    sample_text = """
-    Я хочу улучшить свою бизнес-стратегию и оптимизировать маркетинговые кампании.
-    Нам нужно достичь лучшего вовлечения клиентов и развить новые каналы продаж.
-    Цель - трансформировать нашу бизнес-модель, чтобы быть более конкурентоспособными на рынке.
-    """
-
-    # Process with reflection agent
-    input_data = ReflectionInput(
-        content=sample_text,
-        metadata={
-            "source": "user_input",
-            "lang": "ru",
-            "user_id": "1234",
-            "timestamp": "2025-07-29T12:00:00Z"
-        }
+    # Создаём команду
+    crew = Crew(
+        agents=agents,
+        verbose=True
     )
 
-    result = reflection_agent.execute(input_data)
+    # Пример задачи: классификация входных данных
+    classification_task = Task(
+        description="""
+            Проанализировать входные данные и определить их модальность.
+            В зависимости от типа данных, передать их соответствующему агенту для обработки.
+        """,
+        expected_output="Структурированный результат с типом данных и извлечённой информацией",
+        agent=input_classifier_agent
+    )
 
-    print("\nРезультаты анализа Reflection Agent:")
-    print(f"Контекст: {result.context}")
-    print(f"Теги домена: {', '.join(result.domain_tags)}")
-    print(f"Рекомендованные агенты: {', '.join(result.recommended_agents)}")
-    print(f"Обоснование: {result.reasoning}")
+    # Пример входных данных
+    test_inputs = [
+        {"type": "text", "content": "Это пример текста для анализа"},
+        {"type": "audio", "file_path": "example.mp3"},
+        {"type": "video", "file_path": "example.mp4"},
+        {"type": "image", "file_path": "example.jpg"}
+    ]
 
-    if result.similarity_case_id:
-        print(f"Найден похожий кейс: {result.similarity_case_id}")
-    else:
-        print("Похожие кейсы не найдены.")
+    # Обработка каждого входного элемента
+    for i, input_data in enumerate(test_inputs, 1):
+        print(f"\n📦 Обработка входного элемента {i}: {input_data}")
 
-    print("\nОбработка завершена!")
+        # Выполнение задачи
+        result = crew.execute_task(
+            task=classification_task,
+            input_data=input_data
+        )
+
+        print(f"✅ Результат: {result}")
+
+    print("\n🎉 Все входные данные обработаны!")
 
 if __name__ == "__main__":
     main()
