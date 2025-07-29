@@ -1,5 +1,3 @@
-
-
 from agents.reflection_agent import ReflectionAgent, ReflectionInput
 from memory.weaviate_client import WeaviateMemory
 from schemas import VideoData, AudioData, ImageData, DocumentData, TextData
@@ -7,50 +5,40 @@ from schemas import VideoData, AudioData, ImageData, DocumentData, TextData
 def main():
     # Initialize components
     memory = WeaviateMemory()
-    reflection_agent = ReflectionAgent()
+    reflection_agent = ReflectionAgent(memory=memory)
 
     # Example usage
     print("Welcome to the Multi-Agent System!")
 
-    # Create sample data
-    sample_video = VideoData(
-        id="video_001",
-        content="path/to/video.mp4",
-        duration=120.5,
-        resolution="1920x1080"
-    )
-
-    # Store in memory
-    memory.store_data(
-        data_id=sample_video.id,
-        data_type=sample_video.data_type,
-        content=sample_video.content,
-        metadata=sample_video.dict()
-    )
+    # Create sample text data for reflection agent
+    sample_text = """
+    I want to improve my business strategy and optimize our marketing campaigns.
+    We need to achieve better customer engagement and develop new sales channels.
+    The goal is to transform our business model to be more competitive in the market.
+    """
 
     # Process with reflection agent
     input_data = ReflectionInput(
-        data_type=sample_video.data_type,
-        content=sample_video.content
+        text=sample_text,
+        metadata={"source": "user_input", "timestamp": "2025-07-29T12:00:00Z"}
     )
 
-    result = reflection_agent.process(input_data)
+    result = reflection_agent.execute(input_data)
 
-    print("\nReflection Agent Analysis:")
-    print(f"Data Type: {input_data.data_type}")
-    print(f"Analysis: {result.analysis}")
+    print("\nReflection Agent Analysis Results:")
+    print(f"Context Category: {result.context_category}")
+    print(f"Complexity Level: {result.complexity_level}")
+    print(f"Novelty Score: {result.novelty_score:.2f}")
     print(f"Required Agents: {result.required_agents}")
-    print(f"Recommended Tasks: {result.recommended_tasks}")
+    print(f"User Goals: {result.user_goals}")
+    print(f"Analysis Summary: {result.analysis_summary}")
 
-    # Update memory with processing results
-    memory.update_processing_status(
-        data_id=sample_video.id,
-        status="analyzed",
-        agents=result.required_agents
-    )
+    if result.similar_cases:
+        print(f"\nSimilar Cases Found: {len(result.similar_cases)}")
+        for i, case in enumerate(result.similar_cases, 1):
+            print(f"  {i}. {case.get('content', 'No content')[:100]}...")
 
     print("\nProcessing complete!")
 
 if __name__ == "__main__":
     main()
-
