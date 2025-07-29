@@ -1,6 +1,10 @@
+
+
 crewai
 crewai-tools
 faster-whisper
 paddleocr
+moviepy
 mimetypes
 pathlib
+
