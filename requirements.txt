@@ -1,11 +1,17 @@
 
 
+
+
 crewai
 crewai-tools
 faster-whisper
 paddleocr
 moviepy
 git+https://github.com/openai/whisper.git
+pytesseract
+pillow
 mimetypes
 pathlib
+
+
 
