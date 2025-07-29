@@ -1,0 +1,6 @@
+
+crewai
+pydantic
+weaviate-client
+fastapi
+uvicorn
