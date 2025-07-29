@@ -1,5 +1,14 @@
+
+
+
+
+
+
+
+
+
+
 import os
-from config import settings
 from tools.audio2text_tool import AudioToTextTool
 from tools.weaviate_storage_tool import WeaviateStorageTool
 
@@ -25,3 +34,13 @@ def transcribe_audio_file(audio_path):
         "transcription_length": len(transcription),
         "status": "processed"
     }
+
+
+
+
+
+
+
+
+
+

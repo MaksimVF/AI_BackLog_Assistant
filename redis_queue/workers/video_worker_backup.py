@@ -1,5 +1,12 @@
+
+
+
+
+
+
+
+
 import os
-from config import settings
 from tools.video_frame_extractor_tool import VideoFrameExtractorTool
 from tools.video2text_tool import VideoToTextTool
 from tools.weaviate_storage_tool import WeaviateStorageTool
@@ -41,4 +48,12 @@ def process_video_file(video_path):
         "frames_extracted": len(frames),
         "transcription_length": len(transcription),
         "status": "processed"
-   }
+    }
+
+
+
+
+
+
+
+

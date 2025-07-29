@@ -1,5 +1,13 @@
+
+
+
+
+
+
+
+
+
 import os
-from config import settings
 from tools.image2text_tool import ImageToTextTool
 from tools.weaviate_storage_tool import WeaviateStorageTool
 
@@ -25,3 +33,12 @@ def process_image_file(image_path):
         "text_length": len(text),
         "status": "processed"
     }
+
+
+
+
+
+
+
+
+

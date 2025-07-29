@@ -1,4 +1,3 @@
-import os
 from crewai import Crew, Task
 from agents.input_classifier_agent import input_classifier_agent
 from agents.modality_detector_agent import modality_detector_agent
@@ -6,19 +5,10 @@ from agents.text_processor_agent import text_processor_agent
 from agents.audio_transcriber_agent import audio_transcriber_agent
 from agents.video_analyzer_agent import video_analyzer_agent
 from agents.image_analyzer_agent import image_analyzer_agent
-from config import settings, env  # Импортируем конфигурацию
 
 def main():
     print("🚀 Запуск системы мультиагентов")
     print("=" * 50)
-
-    # Проверка конфигурации
-    print(f"📋 Конфигурация:")
-    print(f"   - Weaviate URL: {settings.WEAVIATE_URL}")
-    print(f"   - Redis URL: {settings.REDIS_URL}")
-    print(f"   - Путь к видео: {settings.VIDEO_PATH}")
-    print(f"   - Путь к аудио: {settings.AUDIO_PATH}")
-    print(f"   - Путь к транскриптам: {settings.TRANSCRIPTS_PATH}")
 
     # Создаём команду агентов
     agents = [
@@ -49,9 +39,9 @@ def main():
     # Пример входных данных
     test_inputs = [
         {"type": "text", "content": "Это пример текста для анализа"},
-        {"type": "audio", "file_path": str(settings.AUDIO_PATH / "example.mp3")},
-        {"type": "video", "file_path": str(settings.VIDEO_PATH / "example.mp4")},
-        {"type": "image", "file_path": str(settings.DATA_PATH / "example.jpg")}
+        {"type": "audio", "file_path": "example.mp3"},
+        {"type": "video", "file_path": "example.mp4"},
+        {"type": "image", "file_path": "example.jpg"}
     ]
 
     # Обработка каждого входного элемента
