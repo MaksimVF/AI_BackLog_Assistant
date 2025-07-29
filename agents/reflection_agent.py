@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Optional, Any, Literal
 from pydantic import BaseModel, Field
 from crewai import Agent, Task
 from memory.weaviate_client import WeaviateMemory
@@ -6,19 +6,16 @@ import json
 
 class ReflectionInput(BaseModel):
     """Input schema for Reflection Agent"""
-    text: str  # The main text content to analyze
-    metadata: Optional[Dict] = Field(default_factory=dict)  # Additional metadata
-    context: Optional[str] = None  # Optional context information
+    content: str  # The main content to analyze
+    metadata: Dict = Field(default_factory=dict)  # Additional metadata
 
 class ReflectionOutput(BaseModel):
     """Output schema for Reflection Agent"""
-    context_category: str  # Context category (personal growth, business, IT, etc.)
-    required_agents: List[str]  # List of agent types required for processing
-    novelty_score: float  # Novelty score (0-1) where 1 is completely new
-    complexity_level: str  # Complexity level (low, medium, high)
-    user_goals: List[str]  # Identified user goals
-    analysis_summary: str  # Summary of the analysis
-    similar_cases: Optional[List[Dict]] = None  # Similar cases from memory
+    context: Literal['личный рост', 'бизнес', 'психология', 'обучение', 'неизвестно']
+    domain_tags: List[str]
+    recommended_agents: List[str]  # List of recommended agent types
+    reasoning: str  # Reasoning behind the analysis
+    similarity_case_id: Optional[str] = None  # ID of similar case if found
 
 class ReflectionAgent(Agent):
     """Agent that performs deep analysis of input data to determine context, required agents, and novelty"""
@@ -32,109 +29,110 @@ class ReflectionAgent(Agent):
         )
         self.memory = memory or WeaviateMemory()
 
-    def analyze_text(self, text: str) -> Dict[str, Any]:
+    def analyze_content(self, content: str) -> Dict[str, Any]:
         """
-        Perform text analysis to extract meaning, category, and complexity
+        Perform content analysis to extract meaning, category, and context
 
         Args:
-            text: Input text to analyze
+            content: Input content to analyze
 
         Returns:
             Dictionary with analysis results
         """
-        # In a real implementation, this would use NLP models
-        # For now, we'll use simple heuristics
+        # Determine context category with Russian labels
+        categories = ['личный рост', 'бизнес', 'психология', 'обучение']
+        category_scores = {cat: content.lower().count(cat) for cat in categories}
+        context = max(category_scores.items(), key=lambda x: x[1])[0]
 
-        # Determine context category
-        categories = ['personal growth', 'business', 'IT', 'education', 'health', 'finance']
-        category_scores = {cat: text.lower().count(cat) for cat in categories}
-        context_category = max(category_scores.items(), key=lambda x: x[1])[0]
+        if max(category_scores.values()) == 0:
+            context = 'неизвестно'
 
-        # Determine complexity (simple heuristic based on length and special terms)
-        word_count = len(text.split())
-        special_terms = ['strategy', 'implementation', 'architecture', 'optimization', 'transformation']
-        complexity_score = sum(text.lower().count(term) for term in special_terms) + (word_count // 100)
+        # Determine domain tags
+        domain_tags = []
+        if 'бизнес' in context or 'бизнес' in content.lower():
+            domain_tags.extend(['маркетинг', 'стратегия', 'финансы'])
+        if 'личный рост' in context or 'личный рост' in content.lower():
+            domain_tags.extend(['мотивация', 'саморазвитие', 'цели'])
+        if 'психология' in context or 'психология' in content.lower():
+            domain_tags.extend(['эмоции', 'поведение', 'самопознание'])
+        if 'обучение' in context or 'обучение' in content.lower():
+            domain_tags.extend(['образование', 'навыки', 'знания'])
 
-        if complexity_score > 5:
-            complexity_level = 'high'
-        elif complexity_score > 2:
-            complexity_level = 'medium'
-        else:
-            complexity_level = 'low'
-
-        # Extract potential user goals
-        goal_keywords = ['achieve', 'improve', 'learn', 'develop', 'optimize', 'solve', 'create']
-        user_goals = []
-        for keyword in goal_keywords:
-            if keyword in text.lower():
-                # Extract sentence containing the keyword
-                sentences = text.split('.')
-                for sentence in sentences:
-                    if keyword in sentence.lower():
-                        user_goals.append(sentence.strip())
-                        break
+        # Generate reasoning
+        reasoning = (
+            f"Анализ показал, что контент относится к категории '{context}'. "
+            f"Основные темы: {', '.join(domain_tags)}. "
+            f"Рекомендованные агенты будут помогать с обработкой этого контента."
+        )
 
         return {
-            'context_category': context_category,
-            'complexity_level': complexity_level,
-            'user_goals': user_goals,
-            'complexity_score': complexity_score
+            'context': context,
+            'domain_tags': domain_tags,
+            'reasoning': reasoning
         }
 
-    def determine_required_agents(self, context_category: str, complexity_level: str) -> List[str]:
+    def determine_recommended_agents(self, context: str, domain_tags: List[str]) -> List[str]:
         """
-        Determine which agents are needed based on context and complexity
+        Determine which agents are recommended based on context and domain tags
 
         Args:
-            context_category: The identified context category
-            complexity_level: The identified complexity level
+            context: The identified context
+            domain_tags: The identified domain tags
 
         Returns:
-            List of required agent types
+            List of recommended agent types
         """
         # Base agents for all contexts
-        base_agents = ['AnalysisAgent', 'CategorizationAgent']
+        base_agents = ['CategorizationAgent']
 
         # Context-specific agents
         context_agents = {
-            'personal growth': ['PersonalGrowthAgent', 'GoalSettingAgent'],
-            'business': ['BusinessAnalysisAgent', 'DecisionMakingAgent'],
-            'IT': ['TechnicalAnalysisAgent', 'ArchitectureAgent'],
-            'education': ['LearningAgent', 'ContentRecommendationAgent'],
-            'health': ['HealthAnalysisAgent', 'WellnessAgent'],
-            'finance': ['FinancialAnalysisAgent', 'InvestmentAgent']
+            'личный рост': ['PersonalGrowthAgent', 'GoalSettingAgent'],
+            'бизнес': ['BusinessAnalysisAgent', 'DecisionAgent'],
+            'психология': ['PsychologyAgent', 'EmotionAnalysisAgent'],
+            'обучение': ['LearningAgent', 'ContentRecommendationAgent'],
+            'неизвестно': ['GeneralAnalysisAgent']
         }
 
-        # Complexity-based agents
-        complexity_agents = {
-            'low': ['SimpleProcessingAgent'],
-            'medium': ['MediumProcessingAgent', 'VisualizationAgent'],
-            'high': ['AdvancedProcessingAgent', 'VisualizationAgent', 'DecisionSupportAgent']
+        # Domain-specific agents
+        domain_agents = {
+            'маркетинг': ['MarketingAgent'],
+            'стратегия': ['StrategyAgent'],
+            'финансы': ['FinanceAgent'],
+            'мотивация': ['MotivationAgent'],
+            'саморазвитие': ['SelfDevelopmentAgent'],
+            'эмоции': ['EmotionAgent'],
+            'образование': ['EducationAgent']
         }
 
-        return base_agents + context_agents.get(context_category, []) + complexity_agents.get(complexity_level, [])
+        # Get agents based on context and domains
+        agents = base_agents + context_agents.get(context, [])
 
-    def assess_novelty(self, text: str) -> float:
+        # Add domain-specific agents
+        for tag in domain_tags:
+            if tag in domain_agents:
+                agents.extend(domain_agents[tag])
+
+        return list(set(agents))  # Remove duplicates
+
+    def find_similar_case(self, content: str) -> Optional[str]:
         """
-        Assess the novelty of the request by searching memory for similar cases
+        Find similar case in memory
 
         Args:
-            text: Input text to assess
+            content: Input content to search for
 
         Returns:
-            Novelty score between 0 (not novel) and 1 (completely novel)
+            ID of similar case if found, None otherwise
         """
         # Query memory for similar cases
-        similar_cases = self.memory.query_similar(text, limit=5)
+        similar_cases = self.memory.query_similar(content, limit=1)
 
-        # Calculate similarity score (simple heuristic)
-        if not similar_cases:
-            return 1.0  # Completely novel
+        if similar_cases and len(similar_cases) > 0:
+            # Return the first similar case ID
+            return similar_cases[0].get('id', None)
 
-        # In a real implementation, we'd use proper similarity metrics
-        # For now, we'll use a simple count-based approach
-        similarity_score = min(len(similar_cases) / 5, 1.0)
-        return 1.0 - similarity_score  # Higher means more novel
+        return None
 
     def execute(self, input_data: ReflectionInput) -> ReflectionOutput:
         """
@@ -146,35 +144,25 @@ class ReflectionAgent(Agent):
         Returns:
             ReflectionOutput: Complete analysis results
         """
-        # Perform text analysis
-        text_analysis = self.analyze_text(input_data.text)
+        # Perform content analysis
+        content_analysis = self.analyze_content(input_data.content)
 
-        # Determine required agents
-        required_agents = self.determine_required_agents(
-            text_analysis['context_category'],
-            text_analysis['complexity_level']
+        # Determine recommended agents
+        recommended_agents = self.determine_recommended_agents(
+            content_analysis['context'],
+            content_analysis['domain_tags']
         )
 
-        # Assess novelty
-        novelty_score = self.assess_novelty(input_data.text)
-
-        # Get similar cases from memory
-        similar_cases = self.memory.query_similar(input_data.text, limit=3)
+        # Find similar case
+        similarity_case_id = self.find_similar_case(input_data.content)
 
         # Create output
         return ReflectionOutput(
-            context_category=text_analysis['context_category'],
-            required_agents=required_agents,
-            novelty_score=novelty_score,
-            complexity_level=text_analysis['complexity_level'],
-            user_goals=text_analysis['user_goals'],
-            analysis_summary=(
-                f"Analyzed text about {text_analysis['context_category']} with "
-                f"{text_analysis['complexity_level']} complexity. "
-                f"Novelty score: {novelty_score:.2f}. "
-                f"Identified {len(text_analysis['user_goals'])} user goals."
-            ),
-            similar_cases=similar_cases
+            context=content_analysis['context'],
+            domain_tags=content_analysis['domain_tags'],
+            recommended_agents=recommended_agents,
+            reasoning=content_analysis['reasoning'],
+            similarity_case_id=similarity_case_id
         )
 
     def run(self, input_data: ReflectionInput) -> ReflectionOutput:
