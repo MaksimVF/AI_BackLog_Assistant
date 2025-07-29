@@ -118,25 +118,6 @@ class ReflectionAgent(Agent):
 
         return list(set(agents))  # Remove duplicates
 
-    def find_similar_case(self, content: str) -> Optional[str]:
-        """
-        Find similar case in memory
-
-        Args:
-            content: Input content to search for
-
-        Returns:
-            ID of similar case if found, None otherwise
-        """
-        # Query memory for similar cases
-        similar_cases = self.memory.query_similar(content, limit=1)
-
-        if similar_cases and len(similar_cases) > 0:
-            # Return the first similar case ID
-            return similar_cases[0].get('id', None)
-
-        return None
-
     def execute(self, input_data: ReflectionInput) -> ReflectionOutput:
         """
         Execute the reflection analysis process
@@ -156,8 +137,18 @@ class ReflectionAgent(Agent):
             content_analysis['domain_tags']
         )
 
-        # Find similar case
-        similarity_case_id = self.find_similar_case(input_data.content)
+        # Find similar case using Weaviate
+        similarity_case_id = self.memory.find_similar_case(input_data.content)
+
+        # Store the current case in memory for future reference
+        case_id = f"case_{hash(input_data.content)}"
+        self.memory.store_case(
+            case_id=case_id,
+            content=input_data.content,
+            context=content_analysis['context'],
+            domain_tags=content_analysis['domain_tags'],
+            metadata=input_data.metadata
+        )
 
         # Create output
         return ReflectionOutput(
