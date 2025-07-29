@@ -1,7 +1,6 @@
-
-
 import weaviate
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
+import json
 
 class WeaviateMemory:
     """Weaviate vector store client for memory management"""
@@ -13,43 +12,81 @@ class WeaviateMemory:
     def _setup_schema(self):
         """Set up the schema for our multi-agent system"""
         # Check if schema exists, if not create it
-        if not self.client.schema.exists("DataObject"):
-            class_obj = {
-                "class": "DataObject",
+        if not self.client.schema.exists("Case"):
+            case_class = {
+                "class": "Case",
                 "properties": [
-                    {"name": "data_type", "dataType": ["string"]},
                     {"name": "content", "dataType": ["string"]},
+                    {"name": "context", "dataType": ["string"]},
+                    {"name": "domain_tags", "dataType": ["string[]"]},
                     {"name": "metadata", "dataType": ["string"]},
                     {"name": "processing_status", "dataType": ["string"]},
                     {"name": "agents_involved", "dataType": ["string[]"]}
                 ],
                 "vectorizer": "text2vec-transformers"  # Using default vectorizer
             }
-            self.client.schema.create_class(class_obj)
+            self.client.schema.create_class(case_class)
 
-    def store_data(self, data_id: str, data_type: str, content: str, metadata: Optional[Dict] = None) -> Dict:
-        """Store data in Weaviate"""
-        data_object = {
-            "data_type": data_type,
+    def store_case(self, case_id: str, content: str, context: str, domain_tags: List[str], metadata: Optional[Dict] = None) -> Dict:
+        """Store a case in Weaviate"""
+        case_data = {
             "content": content,
-            "metadata": str(metadata) if metadata else "",
+            "context": context,
+            "domain_tags": domain_tags,
+            "metadata": json.dumps(metadata) if metadata else "{}",
             "processing_status": "new",
             "agents_involved": []
         }
 
-        return self.client.data_object.create(data_object, "DataObject", data_id)
+        return self.client.data_object.create(case_data, "Case", case_id)
 
-    def update_processing_status(self, data_id: str, status: str, agents: list) -> Dict:
-        """Update processing status and agents involved"""
+    def update_case_status(self, case_id: str, status: str, agents: List[str]) -> Dict:
+        """Update case processing status and agents involved"""
         updates = {
             "processing_status": status,
             "agents_involved": agents
         }
 
-        return self.client.data_object.update(data_id, "DataObject", updates)
+        return self.client.data_object.update(case_id, "Case", updates)
 
-    def query_similar(self, query: str, limit: int = 5) -> list:
-        """Query similar data objects"""
-        near_text = {"concepts": [query]}
-        return self.client.query.get("DataObject", ["data_type", "content"]).with_near_text(near_text).with_limit(limit).do()
+    def find_similar_case(self, text: str) -> Optional[str]:
+        """
+        Find similar case in Weaviate
 
+        Args:
+            text: Input text to search for
+
+        Returns:
+            ID of similar case if found, None otherwise
+        """
+        response = self.client.query.get("Case", ["id"]).with_near_text({"concepts": [text]}).with_limit(1).do()
+
+        if response.get("data", {}).get("Get", {}).get("Case"):
+            return response["data"]["Get"]["Case"][0]["id"]
+
+        return None
+
+    def query_similar_cases(self, text: str, limit: int = 3) -> List[Dict]:
+        """
+        Query similar cases from Weaviate
+
+        Args:
+            text: Input text to search for
+            limit: Maximum number of results to return
+
+        Returns:
+            List of similar cases
+        """
+        response = self.client.query.get("Case", ["id", "content", "context", "domain_tags"]).with_near_text({"concepts": [text]}).with_limit(limit).do()
+
+        cases = []
+        if response.get("data", {}).get("Get", {}).get("Case"):
+            for case in response["data"]["Get"]["Case"]:
+                cases.append({
+                    "id": case["id"],
+                    "content": case.get("content", ""),
+                    "context": case.get("context", ""),
+                    "domain_tags": case.get("domain_tags", [])
+                })
+
+        return cases

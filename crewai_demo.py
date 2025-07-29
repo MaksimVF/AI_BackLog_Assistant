@@ -1,10 +1,14 @@
 from crewai import Agent, Task, Crew
 from agents.reflection_agent import ReflectionAgent
+from memory.weaviate_client import WeaviateMemory
 import json
 
 def main():
-    # Create our ReflectionAgent with CrewAI integration
-    reflection_agent = ReflectionAgent()
+    # Initialize Weaviate memory
+    memory = WeaviateMemory()
+
+    # Create our ReflectionAgent with CrewAI integration and memory
+    reflection_agent = ReflectionAgent(memory=memory)
 
     # Create CrewAI Task
     reflection_task = Task(
@@ -38,7 +42,7 @@ def main():
         }
     }
 
-    print("Запуск CrewAI с ReflectionAgent...")
+    print("Запуск CrewAI с ReflectionAgent и Weaviate...")
     print("Входные данные:", json.dumps(input_data, ensure_ascii=False, indent=2))
 
     # Execute the task
@@ -53,6 +57,20 @@ def main():
         try:
             result_dict = json.loads(result)
             print(json.dumps(result_dict, ensure_ascii=False, indent=2))
+
+            # Check for similar cases
+            if result_dict.get("similarity_case_id"):
+                print(f"\nНайден похожий кейс: {result_dict['similarity_case_id']}")
+
+                # Query similar cases from memory
+                similar_cases = memory.query_similar_cases(sample_text, limit=2)
+                if similar_cases:
+                    print("\nПохожие кейсы из памяти:")
+                    for i, case in enumerate(similar_cases, 1):
+                        print(f"  {i}. Контекст: {case['context']}")
+                        print(f"     Теги: {', '.join(case['domain_tags'])}")
+                        print(f"     Содержимое: {case['content'][:100]}...")
+                        print()
         except:
             print(result)
     else:
