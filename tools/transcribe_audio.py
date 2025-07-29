@@ -1,11 +1,18 @@
-# tools/transcribe_audio.py
-
 from crewai_tools import BaseTool
+from faster_whisper import WhisperModel
 
-class TranscribeAudioTool(BaseTool):
+class AudioTranscriptionTool(BaseTool):
     name = "transcribe_audio"
-    description = "Преобразует аудио в текст с использованием модели Whisper"
+    description = "Преобразует аудиофайл в текст (Speech-to-Text)"
 
-    def _run(self, audio_file_path: str) -> str:
-        # TODO: Implement using whisper.cpp or faster-whisper
-        return "Реализация будет добавлена позже"
+    def _run(self, audio_path: str) -> str:
+        model_size = "base"  # можно заменить на "small", "medium" и т.д.
+        model = WhisperModel(model_size, compute_type="int8")
+
+        segments, info = model.transcribe(audio_path)
+        transcript = ""
+
+        for segment in segments:
+            transcript += f"{segment.text.strip()} "
+
+        return transcript.strip()
