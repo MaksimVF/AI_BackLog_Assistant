@@ -1,47 +1,47 @@
-from agents.reflection_agent import ReflectionAgent, ReflectionInput
-from memory.weaviate_client import WeaviateMemory
-from schemas import VideoData, AudioData, ImageData, DocumentData, TextData
+from agents.input_classifier_agent import InputClassifierAgent
+from crewai import Task, Crew
 
 def main():
-    # Initialize components
-    memory = WeaviateMemory()
-    reflection_agent = ReflectionAgent(memory=memory)
+    # Initialize the agent
+    classifier_agent = InputClassifierAgent
 
-    # Example usage
-    print("Добро пожаловать в мультиагентную систему!")
-
-    # Create sample text data for reflection agent (in Russian)
-    sample_text = """
-    Я хочу улучшить свою бизнес-стратегию и оптимизировать маркетинговые кампании.
-    Нам нужно достичь лучшего вовлечения клиентов и развить новые каналы продаж.
-    Цель - трансформировать нашу бизнес-модель, чтобы быть более конкурентоспособными на рынке.
-    """
-
-    # Process with reflection agent
-    input_data = ReflectionInput(
-        content=sample_text,
-        metadata={
-            "source": "user_input",
-            "lang": "ru",
-            "user_id": "1234",
-            "timestamp": "2025-07-29T12:00:00Z"
-        }
+    # Create a task for file type detection
+    file_detection_task = Task(
+        description="Определи тип файла по его пути",
+        expected_output="MIME тип и расширение файла",
+        agent=classifier_agent
     )
 
-    result = reflection_agent.execute(input_data)
+    # Create a crew with the agent and task
+    crew = Crew(
+        agents=[classifier_agent],
+        tasks=[file_detection_task],
+        verbose=True
+    )
 
-    print("\nРезультаты анализа Reflection Agent:")
-    print(f"Контекст: {result.context}")
-    print(f"Теги домена: {', '.join(result.domain_tags)}")
-    print(f"Рекомендованные агенты: {', '.join(result.recommended_agents)}")
-    print(f"Обоснование: {result.reasoning}")
+    # Test with different file types
+    test_files = [
+        "document.pdf",
+        "image.jpg",
+        "audio.mp3",
+        "video.mp4",
+        "data.json",
+        "unknown_file.abc"
+    ]
 
-    if result.similarity_case_id:
-        print(f"Найден похожий кейс: {result.similarity_case_id}")
-    else:
-        print("Похожие кейсы не найдены.")
+    print("Тестирование FileTypeDetectorTool:")
+    print("=" * 50)
 
-    print("\nОбработка завершена!")
+    for file_path in test_files:
+        print(f"\nАнализ файла: {file_path}")
+
+        # Execute the task
+        result = crew.execute_task(
+            task=file_detection_task,
+            input_data=file_path
+        )
+
+        print(f"Результат: {result}")
 
 if __name__ == "__main__":
     main()

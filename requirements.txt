@@ -1,6 +1,4 @@
-
 crewai
-pydantic
-weaviate-client
-fastapi
-uvicorn
+crewai-tools
+mimetypes
+pathlib
