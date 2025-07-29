@@ -1,3 +1,7 @@
+
+
+
+
 crewai
 crewai-tools
 faster-whisper
@@ -9,8 +13,6 @@ pillow
 opencv-python
 mimetypes
 pathlib
-weaviate-client
-rq
-redis
-python-dotenv
-hiredis
+
+
+
