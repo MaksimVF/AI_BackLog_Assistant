@@ -1,31 +1,36 @@
-
-
-
-
-
-
-
-
-
 import os
+from pathlib import Path
 from dotenv import load_dotenv
 
 # Загрузка переменных окружения
 load_dotenv()
 
-# Weaviate
-WEAVIATE_URL = os.getenv("WEAVIATE_URL", "http://weaviate:8080")
+# Базовая директория проекта
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Пути к данным (локальные)
+DATA_PATH = BASE_DIR / "data"
+VIDEO_PATH = DATA_PATH / "videos"
+AUDIO_PATH = DATA_PATH / "audios"
+TRANSCRIPTS_PATH = DATA_PATH / "transcripts"
+
+# Убедимся, что директории существуют
+for path in [DATA_PATH, VIDEO_PATH, AUDIO_PATH, TRANSCRIPTS_PATH]:
+    path.mkdir(parents=True, exist_ok=True)
 
 # Redis
-REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379")
+REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
 
-# Пути
-UPLOAD_DIR = os.getenv("UPLOAD_DIR", "/tmp/uploads")
-PROCESSED_DIR = os.getenv("PROCESSED_DIR", "/tmp/processed")
+# Weaviate
+WEAVIATE_URL = os.getenv("WEAVIATE_URL", "http://localhost:8080")
 
-# Токены и ключи
+# Для future use: API ключи, креденшелы и прочее
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 WHISPER_MODEL = os.getenv("WHISPER_MODEL", "base")
+
+# Общее логирование
+LOG_PATH = BASE_DIR / "logs"
+LOG_PATH.mkdir(exist_ok=True)
 
 # Логирование
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
@@ -36,12 +41,3 @@ QUEUE_NAMES = {
     "image": "image_processing",
     "transcription": "transcription"
 }
-
-
-
-
-
-
-
-
-

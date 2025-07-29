@@ -1,12 +1,19 @@
+
+
+
+
+
+
+
+
 from rq import Queue
 from redis import Redis
-from config import settings
 
 # Redis URL можно брать из переменной окружения
-redis_conn = Redis.from_url(settings.REDIS_URL)
-video_queue = Queue(settings.QUEUE_NAMES["video"], connection=redis_conn)
-image_queue = Queue(settings.QUEUE_NAMES["image"], connection=redis_conn)
-transcription_queue = Queue(settings.QUEUE_NAMES["transcription"], connection=redis_conn)
+redis_conn = Redis(host='localhost', port=6379)
+video_queue = Queue('video_processing', connection=redis_conn)
+image_queue = Queue('image_processing', connection=redis_conn)
+transcription_queue = Queue('transcription', connection=redis_conn)
 
 def enqueue_video_task(video_path):
     from redis_queue.workers.video_worker import process_video_file
@@ -19,3 +26,10 @@ def enqueue_image_task(image_path):
 def enqueue_transcription_task(audio_path):
     from redis_queue.workers.transcription_worker import transcribe_audio_file
     transcription_queue.enqueue(transcribe_audio_file, audio_path)
+
+
+
+
+
+
+
