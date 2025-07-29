@@ -1,14 +1,17 @@
 from crewai import Agent
-from tools.file_type_detector import FileTypeDetectorTool
 
-file_type_detector = FileTypeDetectorTool()
-
-InputClassifierAgent = Agent(
-    role="Классификатор входной информации",
-    goal="Определять тип входных данных и вызывать соответствующие инструменты обработки",
-    tools=[
-        file_type_detector  # временно только этот, остальные позже
-    ],
+input_classifier_agent = Agent(
+    name="InputClassifierAgent",
+    role="Главный агент маршрутизации и понимания входных данных",
+    goal="""
+        Получить ввод (файл или текст), определить его природу (модальность),
+        передать его соответствующему подагенту для извлечения информации.
+    """,
+    backstory="""
+        Ты — главный агент по приёму пользовательской информации.
+        Твоя задача — максимально точно понять, с каким типом данных ты работаешь,
+        и правильно передать обработку в нужный модуль.
+    """,
+    tools=[],
     verbose=True,
-    allow_delegation=True
 )

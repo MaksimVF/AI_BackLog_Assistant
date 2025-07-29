@@ -1,0 +1,37 @@
+# CrewAI Configuration
+
+# Agent hierarchy
+agent_hierarchy:
+  - name: InputClassifierAgent
+    role: "Главный агент маршрутизации и понимания входных данных"
+    subagents:
+      - ModalityDetectorAgent
+      - TextProcessorAgent
+      - AudioTranscriberAgent
+      - VideoAnalyzerAgent
+      - ImageAnalyzerAgent
+
+# Tool configuration
+tools:
+  file_type_detector:
+    enabled: true
+    priority: 1
+  transcribe_audio:
+    enabled: true
+    priority: 2
+  run_ocr:
+    enabled: true
+    priority: 3
+  extract_frames:
+    enabled: true
+    priority: 4
+  extract_text_from_pdf:
+    enabled: true
+    priority: 5
+
+# Default settings
+default_settings:
+  verbose: true
+  allow_delegation: true
+  max_iterations: 5
+  temperature: 0.7
