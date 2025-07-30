@@ -11,6 +11,7 @@ This repository contains a multi-agent system built on CrewAI for analyzing and 
 - **CrewAI Integration**: Manages agents and tasks through CrewAI framework
 - **Advanced Document Processing**: Entity extraction, classification, and routing
 - **Multi-language Support**: Russian and English document analysis
+- **Reflection Agents**: Advanced agents for document analysis and reflection
 
 ## Components
 
@@ -20,6 +21,10 @@ This repository contains a multi-agent system built on CrewAI for analyzing and 
    - **Document Classifier**: Categorizes documents by type (analyzers/document_classifier.py)
    - **Document Parser**: Extracts entities and structured blocks (analyzers/document_parser.py)
    - **Report Handler**: Processes and structures various report types (handlers/report_handler.py)
+   - **Reflection Agents**: Advanced agents for document analysis (agents/reflection/)
+     - **FactVerificationAgent**: Verifies factual accuracy of statements (requires LLM)
+     - **AdvancedSentimentAndToneAnalyzer**: Analyzes sentiment and tone (requires LLM)
+     - **SummaryGenerator**: Generates document summaries (requires LLM)
    - (Future agents for video, audio, image, document, and text processing)
 
 2. **Memory**: Weaviate-based vector store for data persistence
@@ -69,9 +74,37 @@ print(context["route"])
 # Output: 'contract_handler'
 ```
 
+## Current Status
+
+The system has been implemented with a focus on reflection agents. However, several key agents require LLM (Language Model) integration for full functionality:
+
+### LLM-Dependent Agents (Requiring Future Implementation)
+
+1. **FactVerificationAgent** (agents/reflection/fact_verification_agent.py)
+   - Requires LLM client for factual verification
+   - Placeholder implementation currently returns a message about missing dependencies
+
+2. **AdvancedSentimentAndToneAnalyzer** (agents/reflection/advanced_sentiment_tone_analyzer.py)
+   - Requires LLM client for advanced sentiment analysis
+   - Placeholder implementation currently returns a message about missing dependencies
+
+3. **SummaryGenerator** (agents/reflection/summary_generator.py)
+   - Requires LLM client for document summarization
+   - Placeholder implementation currently returns a message about missing dependencies
+
+## Next Steps
+
+To complete the implementation, the following tasks need to be addressed:
+
+1. **Implement LLM Client**: Create the core LLM client module (`core.llm_client`)
+2. **Add Text Splitter Utility**: Implement the text splitting utility (`tools.utils.text_splitter`)
+3. **Integrate LLM Dependencies**: Update the placeholder implementations in the reflection agents
+4. **Test LLM Integrations**: Verify that all LLM-dependent agents work correctly with the new dependencies
+
 ## Future Plans
 
 - Add more specialized agents
 - Implement FastAPI interface
 - Add advanced analytics capabilities
 - Integrate with external APIs for enhanced data processing
+- Complete LLM integration for all reflection agents
