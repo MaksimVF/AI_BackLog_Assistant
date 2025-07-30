@@ -22,10 +22,11 @@ This repository contains a multi-agent system built on CrewAI for analyzing and 
    - **Document Parser**: Extracts entities and structured blocks (analyzers/document_parser.py)
    - **Report Handler**: Processes and structures various report types (handlers/report_handler.py)
    - **CategorizationAgent**: Comprehensive document categorization (agents/categorization/)
-     - **DocumentClassifierAgent**: Determines document type
-     - **DomainClassifierAgent**: Identifies industry domain
-     - **TaxonomyMapperAgent**: Maps to internal taxonomies
-     - **TaggingAgent**: Extracts relevant tags and keywords
+     - **DocumentClassifierAgent**: Determines document type using LLM
+     - **DomainClassifierAgent**: Identifies industry domain using LLM
+     - **SemanticTaggingAgent**: Extracts semantic tags and entities using LLM
+     - **SimilarityMatcherAgent**: Finds similar documents using Weaviate
+     - **DocumentGroupAssignerAgent**: Assigns documents to groups/clusters
    - **Reflection Agents**: Advanced agents for document analysis (agents/reflection/)
      - **FactVerificationAgent**: Verifies factual accuracy of statements (requires LLM)
      - **AdvancedSentimentAndToneAnalyzer**: Analyzes sentiment and tone (requires LLM)
@@ -81,17 +82,22 @@ print(context["route"])
 # Output: 'contract_handler'
 
 # Categorize document
-categorization = categorizer.categorize(text)
+categorization = categorizer.categorize_document(text)
 print(categorization)
 # Output: {
-#   'document_type': 'contract',
-#   'domain': 'law',
-#   'taxonomy': {
-#     'okved_code': '69.10',
-#     'kbk_code': '18210102010011000110',
-#     'internal_classifier': 'contract_law_001'
-#   },
-#   'tags': ['договор', 'contract', 'medium_document']
+#   'document_type': 'договор',
+#   'domain': 'юриспруденция',
+#   'semantic_tags': ['договор', 'ООО', 'ИП', 'поставка', 'товары'],
+#   'similar_documents': [
+#     {'id': 'doc_1', 'score': 0.91, 'summary': 'Похожий документ 1'},
+#     {'id': 'doc_2', 'score': 0.87, 'summary': 'Похожий документ 2'}
+#   ],
+#   'group': {
+#     'group_id': 'group_001',
+#     'group_name': 'Общие документы',
+#     'confidence': 0.85,
+#     'tags': ['документ', 'общий', 'неклассифицированный']
+#   }
 # }
 ```
 
