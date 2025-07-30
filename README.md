@@ -21,6 +21,11 @@ This repository contains a multi-agent system built on CrewAI for analyzing and 
    - **Document Classifier**: Categorizes documents by type (analyzers/document_classifier.py)
    - **Document Parser**: Extracts entities and structured blocks (analyzers/document_parser.py)
    - **Report Handler**: Processes and structures various report types (handlers/report_handler.py)
+   - **CategorizationAgent**: Comprehensive document categorization (agents/categorization/)
+     - **DocumentClassifierAgent**: Determines document type
+     - **DomainClassifierAgent**: Identifies industry domain
+     - **TaxonomyMapperAgent**: Maps to internal taxonomies
+     - **TaggingAgent**: Extracts relevant tags and keywords
    - **Reflection Agents**: Advanced agents for document analysis (agents/reflection/)
      - **FactVerificationAgent**: Verifies factual accuracy of statements (requires LLM)
      - **AdvancedSentimentAndToneAnalyzer**: Analyzes sentiment and tone (requires LLM)
@@ -55,10 +60,12 @@ This repository contains a multi-agent system built on CrewAI for analyzing and 
 ```python
 from analyzers.document_parser import DocumentParser
 from analyzers.contextual_router import ContextualRouter
+from agents.categorization.categorization_agent import CategorizationAgent
 
 # Initialize components
 parser = DocumentParser()
 router = ContextualRouter()
+categorizer = CategorizationAgent()
 
 # Process a document
 text = "Договор № 345/2023 от 01.07.2023 между ООО «Пример» и ИП Иванов"
@@ -72,6 +79,20 @@ print(entities)
 context = router.route("example_contract.txt")
 print(context["route"])
 # Output: 'contract_handler'
+
+# Categorize document
+categorization = categorizer.categorize(text)
+print(categorization)
+# Output: {
+#   'document_type': 'contract',
+#   'domain': 'law',
+#   'taxonomy': {
+#     'okved_code': '69.10',
+#     'kbk_code': '18210102010011000110',
+#     'internal_classifier': 'contract_law_001'
+#   },
+#   'tags': ['договор', 'contract', 'medium_document']
+# }
 ```
 
 ## Current Status
@@ -100,6 +121,7 @@ To complete the implementation, the following tasks need to be addressed:
 2. **Add Text Splitter Utility**: Implement the text splitting utility (`tools.utils.text_splitter`)
 3. **Integrate LLM Dependencies**: Update the placeholder implementations in the reflection agents
 4. **Test LLM Integrations**: Verify that all LLM-dependent agents work correctly with the new dependencies
+5. **Enhance CategorizationAgent**: Improve the sub-agents with more sophisticated classification and mapping algorithms
 
 ## Future Plans
 
