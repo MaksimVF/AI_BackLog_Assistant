@@ -6,7 +6,7 @@ Contextual router for document processing.
 Routes documents to appropriate handlers based on content analysis.
 """
 
-from utils.text_cleaner import clean_text
+from tools.text_cleaner import TextCleaner
 from utils.table_extractor import TableExtractor
 from utils.filetype_detector import detect_filetype
 import logging
@@ -41,7 +41,8 @@ class ContextualRouter:
 
         # Extract basic information
         file_type = detect_filetype(file_path)
-        cleaned_text = clean_text(file_path)
+        text_cleaner = TextCleaner()
+        cleaned_text = text_cleaner.clean(open(file_path, 'r', encoding='utf-8').read())
         tables = self.table_extractor.extract_tables_from_file(file_path)
 
         context = {
