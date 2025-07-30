@@ -13,4 +13,7 @@ rq
 redis
 python-dotenv
 hiredis
+
 pymupdf
+semantic-router[fastembed]
+
