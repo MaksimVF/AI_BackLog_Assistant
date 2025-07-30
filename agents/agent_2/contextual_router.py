@@ -65,7 +65,36 @@ router = SemanticRouter(encoder=encoder)
 for route in ROUTES:
     router.add(route)
 
+
+
+def get_all_routes() -> List[Route]:
+    """
+    Get all available routes.
+
+    Returns:
+        List of Route objects
+    """
+    # Make sure we're returning the global ROUTES variable
+    global ROUTES
+    return ROUTES
+
+def get_route_description(route_name: str) -> str:
+    """
+    Get description for a specific route.
+
+    Args:
+        route_name: Name of the route
+
+    Returns:
+        Description of the route
+    """
+    for route in ROUTES:
+        if route.name == route_name:
+            return route.description
+    return "Unknown route"
+
 def route_text(text: str) -> str:
+
     """
     Determine the most appropriate sub-agent for the given text.
     Returns the route name (sub-agent name).
