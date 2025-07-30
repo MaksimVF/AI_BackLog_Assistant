@@ -1,0 +1,58 @@
+
+from typing import Dict, List, Literal
+from pydantic import BaseModel
+
+class ContextAnalysis(BaseModel):
+    """Analysis result for context classification"""
+    context: Literal['личный', 'профессиональный', 'кризисный', 'общий', 'неизвестно']
+    confidence: float
+    reasoning: str
+
+class ContextClassifier:
+    """Classifies the context of input data"""
+
+    def __init__(self):
+        # Define context categories and keywords
+        self.context_keywords = {
+            'личный': ['семья', 'отношения', 'эмоции', 'саморазвитие', 'хобби', 'здоровье'],
+            'профессиональный': ['работа', 'карьера', 'бизнес', 'проект', 'команда', 'дедлайн'],
+            'кризисный': ['проблема', 'кризис', 'стресс', 'конфликт', 'срочно', 'помощь'],
+            'общий': ['информация', 'вопрос', 'совет', 'идея', 'план']
+        }
+
+    def classify(self, text: str) -> ContextAnalysis:
+        """
+        Classify the context of the input text
+
+        Args:
+            text: Input text to classify
+
+        Returns:
+            ContextAnalysis with classification results
+        """
+        # Calculate scores for each context
+        scores = {}
+        total_keywords = 0
+
+        for context, keywords in self.context_keywords.items():
+            score = sum(text.lower().count(keyword.lower()) for keyword in keywords)
+            scores[context] = score
+            total_keywords += score
+
+        # Determine best context
+        if total_keywords == 0:
+            best_context = 'неизвестно'
+            confidence = 0.0
+        else:
+            best_context = max(scores.items(), key=lambda x: x[1])[0]
+            confidence = scores[best_context] / total_keywords if total_keywords > 0 else 0.0
+
+        # Generate reasoning
+        reasoning = f"Анализ показал, что текст содержит ключевые слова, относящиеся к '{best_context}' контексту. "
+        reasoning += f"Основные индикаторы: {', '.join([k for k, v in scores.items() if v > 0])}."
+
+        return ContextAnalysis(
+            context=best_context,
+            confidence=confidence,
+            reasoning=reasoning
+        )
