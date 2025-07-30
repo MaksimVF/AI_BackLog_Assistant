@@ -51,6 +51,12 @@ def test_reflection_agent():
             "expected_context": "кризисный",
             "expected_intent": "кризис",
             "user_id": "user_123"  # Same user to test history
+        },
+        {
+            "content": "Я хочу улучшить свои навыки в машинном обучении и искусственном интеллекте, особенно в области обработки естественного языка. Также интересуюсь последними трендами в глубоком обучении и нейронных сетях.",
+            "expected_context": "профессиональный",  # Note: This test case is primarily for topic analysis
+            "expected_intent": "задача",  # Note: This test case is primarily for topic analysis
+            "user_id": "user_789"
         }
     ]
 
@@ -80,7 +86,15 @@ def test_reflection_agent():
         print(f"Priority: {result.priority}")
         print(f"Reasoning: {result.reasoning}")
         print(f"Sentiment: {result.sentiment} (Score: {result.sentiment_score:.2f})")
+        if result.emotion_details:
+            print(f"Emotion Details: {result.emotion_details}")
         print(f"Topics: {result.topics}")
+        if result.topic_distribution:
+            print(f"Topic Distribution: {result.topic_distribution}")
+        if result.subtopics:
+            print(f"Subtopics: {result.subtopics}")
+        if result.topic_keywords:
+            print(f"Topic Keywords: {result.topic_keywords}")
         print(f"Temporal Patterns: {result.temporal_patterns}")
 
         # Check if context and intent match expected

@@ -43,7 +43,11 @@ class ReflectionOutput(BaseModel):
     # New analysis fields
     sentiment: Optional[str] = None  # Sentiment analysis result
     sentiment_score: Optional[float] = None  # Sentiment score (-1 to 1)
+    emotion_details: Optional[dict] = None  # Detailed emotion analysis
     topics: Optional[List[str]] = None  # Detected topics
+    topic_distribution: Optional[Dict[str, float]] = None  # Topic distribution
+    subtopics: Optional[Dict[str, List[str]]] = None  # Subtopics for each main topic
+    topic_keywords: Optional[Dict[str, List[str]]] = None  # Key keywords for each topic
     temporal_patterns: Optional[List[str]] = None  # Detected temporal patterns
 
 class ReflectionAgent(Agent):
@@ -143,7 +147,11 @@ class ReflectionAgent(Agent):
             user_id=input_data.user_id,
             sentiment=content_analysis['sentiment_analysis'].sentiment,
             sentiment_score=content_analysis['sentiment_analysis'].sentiment_score,
+            emotion_details=content_analysis['sentiment_analysis'].emotion_details,
             topics=content_analysis['topic_analysis'].topics,
+            topic_distribution=content_analysis['topic_analysis'].topic_distribution,
+            subtopics=content_analysis['topic_analysis'].subtopics,
+            topic_keywords=content_analysis['topic_analysis'].keywords,
             temporal_patterns=[p.pattern_type for p in content_analysis['temporal_patterns']]
         )
 
