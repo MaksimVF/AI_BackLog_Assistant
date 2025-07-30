@@ -4,6 +4,7 @@
 
 
 
+
 """
 ReasoningOrchestrator - Core sub-agent for coordinating reflection logic.
 
@@ -28,6 +29,7 @@ class ReasoningOrchestrator:
         self.execution_order = [
             "CompletenessEvaluator",
             "AmbiguityResolver",
+            "ContradictionDetector",
             "PipelineAdjuster",
             "QueryRefiner",
             "HypothesisBuilder"
@@ -58,12 +60,16 @@ class ReasoningOrchestrator:
                 evaluator_name = evaluator.__class__.__name__
 
                 if evaluator_name == "CompletenessEvaluator":
-                    eval_results = evaluator.evaluate(data, metadata.get("data_type"))
+                    eval_results = evaluator.evaluate(data, metadata.get("data_type") if metadata else None)
                     results["evaluation_results"]["completeness"] = eval_results
 
                 elif evaluator_name == "AmbiguityResolver":
                     eval_results = evaluator.resolve(data)
                     results["evaluation_results"]["ambiguities"] = eval_results
+
+                elif evaluator_name == "ContradictionDetector":
+                    eval_results = evaluator.evaluate(data)
+                    results["evaluation_results"]["contradictions"] = eval_results
 
                 elif evaluator_name == "PipelineAdjuster":
                     eval_results = evaluator.adjust(data, results["evaluation_results"])
@@ -117,6 +123,15 @@ class ReasoningOrchestrator:
                 "ambiguities": ambiguities.get("ambiguities", [])
             })
 
+        # Check contradictions
+        contradictions = results["evaluation_results"].get("contradictions", {})
+        if contradictions.get("contradictions_found"):
+            recommendations.append({
+                "type": "logical_conflict",
+                "message": f"Found {len(contradictions.get('contradictions', []))} logical contradictions",
+                "contradictions": contradictions.get("contradictions", [])
+            })
+
         # Check pipeline adjustments
         pipeline = results["evaluation_results"].get("pipeline", {})
         if pipeline.get("adjustments_needed"):
@@ -163,9 +178,5 @@ class ReasoningOrchestrator:
 # Import evaluators for type checking (circular import workaround)
 # These imports are moved to the end to avoid circular dependencies
 # In practice, the evaluators should be passed to the constructor
-
-
-
-
 
 

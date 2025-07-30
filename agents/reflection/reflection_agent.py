@@ -11,6 +11,7 @@ adjust processing pipelines, refine queries, and build hypotheses.
 
 from .completeness_evaluator import CompletenessEvaluator
 from .ambiguity_resolver import AmbiguityResolver
+from .contradiction_detector import ContradictionDetector
 from .pipeline_adjuster import PipelineAdjuster
 from .query_refiner import QueryRefiner
 from .hypothesis_builder import HypothesisBuilder
@@ -23,6 +24,7 @@ class ReflectionAgent:
         """
         self.completeness_evaluator = CompletenessEvaluator()
         self.ambiguity_resolver = AmbiguityResolver()
+        self.contradiction_detector = ContradictionDetector()
         self.pipeline_adjuster = PipelineAdjuster()
         self.query_refiner = QueryRefiner()
         self.hypothesis_builder = HypothesisBuilder()
@@ -32,6 +34,7 @@ class ReflectionAgent:
             evaluators=[
                 self.completeness_evaluator,
                 self.ambiguity_resolver,
+                self.contradiction_detector,
                 self.pipeline_adjuster,
                 self.query_refiner,
                 self.hypothesis_builder
@@ -68,6 +71,7 @@ class ReflectionAgent:
             "completeness_evaluator": self.completeness_evaluator.get_status(),
             "ambiguity_resolver": self.ambiguity_resolver.get_status(),
             "pipeline_adjuster": self.pipeline_adjuster.get_status(),
+            "contradiction_detector": self.contradiction_detector.get_status(),
             "query_refiner": self.query_refiner.get_status(),
             "hypothesis_builder": self.hypothesis_builder.get_status(),
             "orchestrator": self.orchestrator.get_status()
