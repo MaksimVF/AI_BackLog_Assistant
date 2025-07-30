@@ -1,6 +1,7 @@
 
 
 
+
 """
 Semantic Block Classifier module for categorizing document blocks by content type.
 This module analyzes the content of document blocks and assigns semantic categories
@@ -28,28 +29,43 @@ class SemanticBlockClassifier:
         self.keywords_map = {
             "financial": {
                 "keywords": ["счет", "оплата", "налог", "баланс", "финансовый",
-                           "invoice", "payment", "tax", "balance", "financial"],
+                           "invoice", "payment", "tax", "balance", "financial",
+                           "руб", "usd", "eur", "currency", "валюта"],
                 "patterns": [r"\b(?:счет|оплата|налог|баланс)\b",
-                           r"\b(?:invoice|payment|tax|balance)\b"]
+                           r"\b(?:invoice|payment|tax|balance)\b",
+                           r"\b\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{2})\b"]  # Currency amounts
             },
             "legal": {
                 "keywords": ["договор", "статья", "суд", "юридический", "соглашение",
-                           "contract", "article", "court", "legal", "agreement"],
-                "patterns": [r"\b(?:договор|соглашение)\b", r"\b(?:contract|agreement)\b"]
+                           "contract", "article", "court", "legal", "agreement",
+                           "закон", "law", "регламент", "regulation"],
+                "patterns": [r"\b(?:договор|соглашение)\b", r"\b(?:contract|agreement)\b",
+                           r"\b(?:статья|article)\s+\d+"]  # Article numbers
             },
             "technical": {
                 "keywords": ["технический", "инструкция", "параметр", "требование",
-                           "technical", "instruction", "parameter", "requirement"],
+                           "technical", "instruction", "parameter", "requirement",
+                           "specification", "спецификация", "api", "интерфейс"],
                 "patterns": [r"\b(?:технический|инструкция)\b",
-                           r"\b(?:technical|instruction)\b"]
+                           r"\b(?:technical|instruction)\b",
+                           r"\b(?:api|интерфейс)\b"]
             },
             "table": {
-                "keywords": ["таблица", "table"],
-                "patterns": [r"\|", r"\+\-+"]  # Markdown table patterns
+                "keywords": ["таблица", "table", "grid", "табличный"],
+                "patterns": [r"\|", r"\+\-+", r"\b(?:таблица|table)\b"]  # Markdown and ASCII tables
             },
             "list": {
-                "keywords": ["список", "перечень", "list"],
-                "patterns": [r"^\s*[-\*\d\.\)]\s+"]  # List item patterns
+                "keywords": ["список", "перечень", "list", "перечисление"],
+                "patterns": [r"^\s*[-\*\d\.\)]\s+", r"\b(?:список|list)\b"]  # List item patterns
+            },
+            "metadata": {
+                "keywords": ["дата", "date", "автор", "author", "версия", "version"],
+                "patterns": [r"\b(?:дата|date):", r"\b(?:автор|author):",
+                           r"\b(?:версия|version):"]
+            },
+            "footer": {
+                "keywords": ["страница", "page", "copyright", "©"],
+                "patterns": [r"\b(?:страница|page)\s+\d+", r"©\s+\d{4}"]
             }
         }
 
@@ -204,5 +220,6 @@ if __name__ == "__main__":
     print("\nCategory Distribution:")
     for category, count in distribution.items():
         print(f"{category}: {count}")
+
 
 

@@ -1,5 +1,6 @@
 
 
+
 """
 Document Schema Generator module for analyzing and structuring document content.
 This module automatically identifies and categorizes document sections, headers, tables,
@@ -20,13 +21,20 @@ class DocumentSchemaGenerator:
     """
 
     # Regex patterns for different block types
+    # Enhanced header patterns for better detection
     header_pattern = re.compile(
         r"^(?:\d+(\.\d+)*\s+)?[А-ЯA-Z][\w\s\-]{1,50}$",
         re.MULTILINE
     )
+    # More comprehensive list detection
     list_pattern = re.compile(r"^\s*[-\*\d\.\)]\s+")
-    table_pattern = re.compile(r"\|")  # Simple table indicator - pipe symbols
-    section_pattern = re.compile(r"^\s*[IVXLC]+(\.[IVXLC]+)*\s+")  # Roman numeral sections
+    # Enhanced table detection (Markdown, ASCII, and simple grid tables)
+    table_pattern = re.compile(r"\||\+[-+]+\+")
+    # Roman numeral sections and other section markers
+    section_pattern = re.compile(r"^\s*[IVXLC]+(\.[IVXLC]+)*\s+")
+    # Additional patterns for better document structure detection
+    metadata_pattern = re.compile(r"^(?:Дата|Date|Автор|Author|Версия|Version):", re.IGNORECASE)
+    footer_pattern = re.compile(r"^(?:Страница|Page|©|Copyright)\s+", re.IGNORECASE)
 
     def __init__(self):
         """
@@ -34,6 +42,20 @@ class DocumentSchemaGenerator:
         """
         # Custom patterns can be added for specific document types
         self.custom_patterns = {}
+
+        # Enhanced table detection patterns
+        self.table_start_patterns = [
+            re.compile(r"^\s*\|"),  # Markdown table with leading pipe
+            re.compile(r"^\s*\+\-+"),  # ASCII table border
+            re.compile(r"^\s*\d+\s+[^\d]"),  # Number followed by non-digit (simple table)
+        ]
+
+        # Metadata extraction patterns
+        self.metadata_extractors = {
+            "date": re.compile(r"\b(?:Дата|Date):\s*(.*)", re.IGNORECASE),
+            "author": re.compile(r"\b(?:Автор|Author):\s*(.*)", re.IGNORECASE),
+            "version": re.compile(r"\b(?:Версия|Version):\s*(.*)", re.IGNORECASE),
+        }
 
     def add_custom_pattern(self, pattern_name: str, pattern: str) -> None:
         """
@@ -91,6 +113,24 @@ class DocumentSchemaGenerator:
                 current_block_type = None
                 continue
 
+            # Check for metadata (date, author, version)
+            if self.metadata_pattern.match(line_strip):
+                flush_block()
+                current_block_type = "metadata"
+                buffer.append(line_strip)
+                flush_block()
+                current_block_type = None
+                continue
+
+            # Check for footers/page numbers
+            if self.footer_pattern.match(line_strip):
+                flush_block()
+                current_block_type = "footer"
+                buffer.append(line_strip)
+                flush_block()
+                current_block_type = None
+                continue
+
             # Check for headers
             if self.header_pattern.match(line_strip):
                 flush_block()
@@ -100,7 +140,7 @@ class DocumentSchemaGenerator:
                 current_block_type = None
                 continue
 
-            # Check for tables
+            # Check for tables (enhanced detection)
             if self.table_pattern.search(line_strip):
                 if current_block_type != "table":
                     flush_block()
@@ -108,7 +148,7 @@ class DocumentSchemaGenerator:
                 buffer.append(line_strip)
                 continue
 
-            # Check for lists
+            # Check for lists (enhanced detection)
             if self.list_pattern.match(line_strip):
                 if current_block_type != "list":
                     flush_block()
@@ -211,6 +251,25 @@ class DocumentSchemaGenerator:
         # Other blocks inherit from parent or are level 3
         return 3
 
+    def extract_metadata(self, blocks: List[Dict]) -> Dict[str, str]:
+        """
+        Extract metadata from document blocks.
+
+        Args:
+            blocks: List of document blocks
+
+        Returns:
+            Dictionary of extracted metadata
+        """
+        metadata = {}
+        for block in blocks:
+            if block["type"] == "metadata":
+                for key, pattern in self.metadata_extractors.items():
+                    match = pattern.search(block["content"])
+                    if match:
+                        metadata[key] = match.group(1).strip()
+        return metadata
+
     def to_dict(self, schema: List[Dict]) -> Dict:
         """
         Convert schema to a nested dictionary structure.
@@ -302,4 +361,5 @@ if __name__ == "__main__":
     print("\nJSON Output:")
     json_output = generator.to_json(schema)
     print(json_output)
+
 
