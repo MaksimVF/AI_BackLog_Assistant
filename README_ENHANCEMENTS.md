@@ -101,6 +101,46 @@ This document outlines the significant enhancements made to the AI Backlog Assis
   - Confidence scoring
   - Format detection
 
+### 5. Text Cleaner (`agents/analyzers/text_cleaner.py`)
+
+- **Class**: `TextCleaner`
+- **Methods**:
+  - `clean(text)`: Clean and normalize text with metadata
+  - `clean_list(texts)`: Apply cleaning to list of texts
+  - `tokenize(text)`: Basic tokenization
+  - `normalize_for_language(text, target_language)`: Language-specific normalization
+  - `log_processing_trace(input_text, result)`: Generate processing trace
+- **Purpose**: Enhanced text cleaning with language detection and trace logging
+- **Features**:
+  - Configurable cleaning options
+  - Language detection
+  - Multi-language support
+  - Trace logging
+  - Extensible for tokenization and lemmatization
+
+### 4. Semantic Router (`agents/analyzers/semantic_router.py`)
+
+- **Class**: `SemanticRouter`
+- **Methods**:
+  - `route(user_input)`: Comprehensive semantic routing
+  - `route_with_fallback(user_input)`: Routing with fallback
+- **Purpose**: Advanced routing based on source type and content analysis
+- **Features**:
+  - Source-based routing (video, audio, text)
+  - Content-based routing (context, intent)
+  - Priority determination
+  - Comprehensive reasoning
+
+### Text Cleaner Tests
+
+1. **Basic Test** (`test_text_cleaner.py`):
+   - Tests basic text cleaning
+   - Tests custom configuration
+   - Tests list processing
+   - Tests tokenization
+   - Tests processing trace logging
+  - Fallback mechanism
+
 ## Testing and Validation
 
 ### Context Classifier Tests
@@ -116,6 +156,14 @@ This document outlines the significant enhancements made to the AI Backlog Assis
    - Measures semantic matching accuracy
 
 ### Intent Identifier Tests
+
+### Semantic Router Tests
+
+1. **Basic Test** (`test_semantic_router.py`):
+   - Tests source-based routing
+   - Tests content-based routing
+   - Tests priority determination
+   - Tests fallback mechanism
 
 1. **Basic Test** (`test_intent_identifier.py`):
    - Tests keyword/pattern matching
@@ -137,6 +185,40 @@ This document outlines the significant enhancements made to the AI Backlog Assis
 
 ```python
 from agents.analyzers.context_classifier import ContextClassifier
+
+### Text Cleaner Usage
+
+```python
+from agents.analyzers.text_cleaner import TextCleaner
+
+cleaner = TextCleaner()
+
+- **Text Cleaner**: Configurable performance, language detection adds minimal overhead
+
+# Basic cleaning
+result = cleaner.clean("  Пример текста!  ")
+print(result["cleaned"])  # "пример текста!"
+print(result["language"])  # "ru"
+
+# Custom configuration
+custom_cleaner = TextCleaner({
+    "lowercase": False,
+    "preserve_punctuation": [".", ",", "!", "?"]
+})
+result = custom_cleaner.clean("Keep THIS! Text, please.")
+
+# List processing
+results = cleaner.clean_list(["text1", "text2"])
+
+
+4. **Text Cleaner**:
+   - Add NLP-based tokenization (spaCy, NLTK)
+   - Implement lemmatization
+   - Add domain-specific normalization rules
+   - Integrate with external language services
+# With trace logging
+result = cleaner.clean("Important text", log_trace=True)
+```
 
 classifier = ContextClassifier()
 
@@ -164,6 +246,36 @@ print(result.intent_type)  # "вопрос"
 print(result.confidence)  # 1.0
 ```
 
+### Semantic Router Usage
+
+```python
+from agents.analyzers.semantic_router import SemanticRouter
+
+router = SemanticRouter()
+
+- **Semantic Router**: Combines multiple analysis methods, fallback ensures reliability
+
+# Basic routing
+user_input = {
+    "user_id": "user123",
+    "text": "Как работает эта система?",
+    "source": "web"
+}
+result = router.route(user_input)
+print(result["agents"])  # ["text_cleaner", "general_qa_agent"]
+print(result["reasoning"])
+print(result["priority"])
+
+# Routing with fallback
+result = router.route_with_fallback(user_input)
+```
+
+
+3. **Semantic Router**:
+   - Add LLM-based dynamic routing
+   - Implement continuous learning from routing outcomes
+   - Add real-time performance monitoring
+   - Integrate with external service registries
 ### Metadata Builder Usage
 
 ```python
