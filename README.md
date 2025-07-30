@@ -165,3 +165,4 @@ To complete the implementation, the following tasks need to be addressed:
 - Implement proper NLP and vector search dependencies for ContextualizationAgent sub-agents
 - Integrate spaCy and networkx for KnowledgeGraphAgent
 - Add Weaviate integration for ReferenceMatcherAgent
+- Implement LLM integration for SummaryAgent sub-agents
