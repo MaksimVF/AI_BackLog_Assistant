@@ -1,4 +1,6 @@
 
+
+
 """
 Reflection Agent Package
 
@@ -12,6 +14,7 @@ from .redundancy_detector import RedundancyDetector
 from .ambiguity_detector import AmbiguityDetector
 from .conflict_detector import ConflictDetector
 from .style_and_tone_analyzer import StyleAndToneAnalyzer
+from .semantic_consistency_checker import SemanticConsistencyChecker
 
 __all__ = [
     "ReflectionAgent",
@@ -19,5 +22,8 @@ __all__ = [
     "RedundancyDetector",
     "AmbiguityDetector",
     "ConflictDetector",
-    "StyleAndToneAnalyzer"
+    "StyleAndToneAnalyzer",
+    "SemanticConsistencyChecker"
 ]
+
+
