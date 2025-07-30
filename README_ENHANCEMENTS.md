@@ -85,6 +85,22 @@ This document outlines the significant enhancements made to the AI Backlog Assis
   - `call_intent_model(prompt)`: Specialized for intent classification
 - **Purpose**: Provides LLM capabilities for intent identification
 
+### 3. Metadata Builder (`agents/analyzers/metadata_builder.py`)
+
+- **Class**: `MetadataBuilder`
+- **Methods**:
+  - `build_metadata(user_input)`: Generates comprehensive metadata
+  - `build_metadata_for_storage(user_input)`: Formats metadata for storage systems
+- **Purpose**: Centralized metadata generation for all input data
+- **Features**:
+  - Basic metadata (ID, timestamp, source, etc.)
+  - Language detection
+  - Context classification
+  - Intent identification
+  - Domain inference
+  - Confidence scoring
+  - Format detection
+
 ## Testing and Validation
 
 ### Context Classifier Tests
@@ -106,6 +122,14 @@ This document outlines the significant enhancements made to the AI Backlog Assis
    - Validates all intent types
    - Measures confidence scores
    - Tests LLM fallback behavior
+
+### Metadata Builder Tests
+
+1. **Basic Test** (`test_metadata_builder.py`):
+   - Tests comprehensive metadata generation
+   - Validates integration with context classifier and intent identifier
+   - Tests storage format compatibility
+   - Validates language detection
 
 ## Integration Guide
 
@@ -140,11 +164,35 @@ print(result.intent_type)  # "вопрос"
 print(result.confidence)  # 1.0
 ```
 
+### Metadata Builder Usage
+
+```python
+from agents.analyzers.metadata_builder import MetadataBuilder
+
+builder = MetadataBuilder()
+
+# Basic metadata generation
+user_input = {
+    "user_id": "user123",
+    "text": "Как работает эта система?",
+    "source": "web"
+}
+metadata = builder.build_metadata(user_input)
+print(metadata["context"])  # "профессиональный"
+print(metadata["intent"])   # "вопрос"
+print(metadata["language"]) # "ru"
+
+# Metadata for storage (Weaviate format)
+storage_data = builder.build_metadata_for_storage(user_input)
+# Can be directly used with WeaviateTool.add_document_chunk()
+```
+
 ## Performance Considerations
 
 - **Context Classifier**: Semantic approach requires embedding service (local or remote)
 - **Intent Identifier**: LLM calls only made when confidence < 0.6 (optimized usage)
-- **Fallback**: Both systems gracefully degrade to keyword matching when services unavailable
+- **Metadata Builder**: Integrates both classifiers, language detection adds minimal overhead
+- **Fallback**: All systems gracefully degrade to keyword matching when services unavailable
 
 ## Future Enhancements
 
@@ -158,6 +206,12 @@ print(result.confidence)  # 1.0
    - Implement intent-specific confidence thresholds
    - Add multilingual support
 
+
+3. **Metadata Builder**:
+   - Add geolocation detection
+   - Implement source trust scoring
+   - Add content format detection (list, dialog, etc.)
+   - Integrate with external knowledge bases for domain enrichment
 3. **Infrastructure**:
    - Add local embedding service
    - Implement LLM service
