@@ -101,6 +101,20 @@ This document outlines the significant enhancements made to the AI Backlog Assis
   - Confidence scoring
   - Format detection
 
+### 4. Semantic Router (`agents/analyzers/semantic_router.py`)
+
+- **Class**: `SemanticRouter`
+- **Methods**:
+  - `route(user_input)`: Comprehensive semantic routing
+  - `route_with_fallback(user_input)`: Routing with fallback
+- **Purpose**: Advanced routing based on source type and content analysis
+- **Features**:
+  - Source-based routing (video, audio, text)
+  - Content-based routing (context, intent)
+  - Priority determination
+  - Comprehensive reasoning
+  - Fallback mechanism
+
 ## Testing and Validation
 
 ### Context Classifier Tests
@@ -116,6 +130,14 @@ This document outlines the significant enhancements made to the AI Backlog Assis
    - Measures semantic matching accuracy
 
 ### Intent Identifier Tests
+
+### Semantic Router Tests
+
+1. **Basic Test** (`test_semantic_router.py`):
+   - Tests source-based routing
+   - Tests content-based routing
+   - Tests priority determination
+   - Tests fallback mechanism
 
 1. **Basic Test** (`test_intent_identifier.py`):
    - Tests keyword/pattern matching
@@ -164,6 +186,36 @@ print(result.intent_type)  # "вопрос"
 print(result.confidence)  # 1.0
 ```
 
+### Semantic Router Usage
+
+```python
+from agents.analyzers.semantic_router import SemanticRouter
+
+router = SemanticRouter()
+
+- **Semantic Router**: Combines multiple analysis methods, fallback ensures reliability
+
+# Basic routing
+user_input = {
+    "user_id": "user123",
+    "text": "Как работает эта система?",
+    "source": "web"
+}
+result = router.route(user_input)
+print(result["agents"])  # ["text_cleaner", "general_qa_agent"]
+print(result["reasoning"])
+print(result["priority"])
+
+# Routing with fallback
+result = router.route_with_fallback(user_input)
+```
+
+
+3. **Semantic Router**:
+   - Add LLM-based dynamic routing
+   - Implement continuous learning from routing outcomes
+   - Add real-time performance monitoring
+   - Integrate with external service registries
 ### Metadata Builder Usage
 
 ```python
