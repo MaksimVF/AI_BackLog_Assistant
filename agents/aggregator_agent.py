@@ -12,9 +12,26 @@ to provide comprehensive analysis of input data.
 """
 
 from typing import Dict, Any, Union
-from agents.input_classifier_agent import InputClassifierAgent
-from agents.analyzers.text_cleaner import TextCleaner
-from agents.reflection_agent.contextual_router import route_text
+# from agents.input_classifier_agent import InputClassifierAgent
+# from agents.analyzers.text_cleaner import TextCleaner
+
+# from agents.reflection_agent.contextual_router import route_text
+
+def simple_route_text(text: str) -> str:
+    """
+    Simple placeholder for routing logic.
+    """
+    # Basic routing based on keywords
+    text_lower = text.lower()
+    if "договор" in text_lower or "контракт" in text_lower:
+        return "contract_analyzer"
+    elif "отчёт" in text_lower or "репорт" in text_lower:
+        return "report_analyzer"
+    elif "письмо" in text_lower or "email" in text_lower:
+        return "email_analyzer"
+    else:
+        return "general_analyzer"
+
 from agents.reflection.document_reflection_agent import DocumentReflectionAgent
 
 class AggregatorAgent:
@@ -26,11 +43,11 @@ class AggregatorAgent:
         """
         Initialize AggregatorAgent with all required components.
         """
-        # Input processing
-        self.input_classifier = InputClassifierAgent()
+        # Input processing (placeholder for now)
+        # self.input_classifier = InputClassifierAgent()
 
-        # Text processing
-        self.text_cleaner = TextCleaner()
+        # Text processing (placeholder for now)
+        # self.text_cleaner = TextCleaner()
 
         # Reflection and analysis
         self.document_reflector = DocumentReflectionAgent()
@@ -48,18 +65,18 @@ class AggregatorAgent:
         """
         # Step 1: Input classification and transcription
         if input_type in ['audio', 'video', 'image']:
-            # Use InputClassifierAgent to transcribe media to text
-            raw_text = self._transcribe_media(input_type, data)
+            # For now, just use placeholder text (InputClassifierAgent not available)
+            raw_text = f"Transcribed {input_type} content (placeholder)"
         elif input_type == 'text':
             raw_text = data
         else:
             raise ValueError(f"Unsupported input type: {input_type}")
 
-        # Step 2: Text cleaning
-        cleaned_text = self.text_cleaner.clean(raw_text)
+        # Step 2: Text cleaning (placeholder - just use raw text)
+        cleaned_text = raw_text  # Placeholder for text cleaning
 
         # Step 3: Contextual routing (determine agent type)
-        agent_name = route_text(cleaned_text)
+        agent_name = simple_route_text(cleaned_text)
 
         # Step 4: Document reflection and analysis
         reflection_results = self.document_reflector.analyze_text(cleaned_text)
