@@ -1,7 +1,15 @@
+
+
+
+
 from typing import Dict, List, Optional, Any, Literal
 from pydantic import BaseModel, Field
 from crewai import Agent, Task
 from memory.weaviate_client import WeaviateMemory
+from .analyzers.context_classifier import ContextClassifier, ContextAnalysis
+from .analyzers.intent_identifier import IntentIdentifier, IntentAnalysis
+from .analyzers.pattern_matcher import PatternMatcher, PatternAnalysis
+from .router import Router, RoutingDecision
 import json
 
 class ReflectionInput(BaseModel):
@@ -11,11 +19,15 @@ class ReflectionInput(BaseModel):
 
 class ReflectionOutput(BaseModel):
     """Output schema for Reflection Agent"""
-    context: Literal['личный рост', 'бизнес', 'психология', 'обучение', 'неизвестно']
+    context: Literal['личный', 'профессиональный', 'кризисный', 'общий', 'неизвестно']
+    intent: Literal['вопрос', 'задача', 'наблюдение', 'опыт', 'вывод', 'размышление', 'кризис', 'неизвестно']
     domain_tags: List[str]
     recommended_agents: List[str]  # List of recommended agent types
     reasoning: str  # Reasoning behind the analysis
     similarity_case_id: Optional[str] = None  # ID of similar case if found
+    is_repeated_pattern: bool = False  # Whether this is a repeated pattern
+    next_agent: str  # Next agent to route to
+    priority: Literal['high', 'medium', 'low']  # Processing priority
 
 class ReflectionAgent(Agent):
     """Agent that performs deep analysis of input data to determine context, required agents, and novelty"""
@@ -30,11 +42,16 @@ class ReflectionAgent(Agent):
             allow_delegation=False,
             **kwargs
         )
-        self.memory = memory or WeaviateMemory()
+        # Store memory separately to avoid CrewAI validation
+        object.__setattr__(self, 'memory', memory or WeaviateMemory())
+        object.__setattr__(self, 'router', Router(memory=self.memory))
+        object.__setattr__(self, 'context_classifier', ContextClassifier())
+        object.__setattr__(self, 'intent_identifier', IntentIdentifier())
+        object.__setattr__(self, 'pattern_matcher', PatternMatcher(memory=self.memory))
 
     def analyze_content(self, content: str) -> Dict[str, Any]:
         """
-        Perform content analysis to extract meaning, category, and context
+        Perform comprehensive content analysis using all analyzers
 
         Args:
             content: Input content to analyze
@@ -42,44 +59,75 @@ class ReflectionAgent(Agent):
         Returns:
             Dictionary with analysis results
         """
-        # Determine context category with Russian labels
-        categories = ['личный рост', 'бизнес', 'психология', 'обучение']
-        category_scores = {cat: content.lower().count(cat) for cat in categories}
-        context = max(category_scores.items(), key=lambda x: x[1])[0]
+        # Perform all analyses
+        context_analysis = self.context_classifier.classify(content)
+        intent_analysis = self.intent_identifier.identify(content)
+        pattern_analysis = self.pattern_matcher.analyze_patterns(content)
 
-        if max(category_scores.values()) == 0:
-            context = 'неизвестно'
+        # Determine domain tags based on context and intent
+        domain_tags = self._generate_domain_tags(context_analysis.context, intent_analysis.intent_type)
 
-        # Determine domain tags
-        domain_tags = []
-        if 'бизнес' in context or 'бизнес' in content.lower():
-            domain_tags.extend(['маркетинг', 'стратегия', 'финансы'])
-        if 'личный рост' in context or 'личный рост' in content.lower():
-            domain_tags.extend(['мотивация', 'саморазвитие', 'цели'])
-        if 'психология' in context or 'психология' in content.lower():
-            domain_tags.extend(['эмоции', 'поведение', 'самопознание'])
-        if 'обучение' in context or 'обучение' in content.lower():
-            domain_tags.extend(['образование', 'навыки', 'знания'])
-
-        # Generate reasoning
+        # Generate comprehensive reasoning
         reasoning = (
-            f"Анализ показал, что контент относится к категории '{context}'. "
+            f"Контекст: {context_analysis.context} ({context_analysis.confidence:.2f}). "
+            f"Намерение: {intent_analysis.intent_type} ({intent_analysis.confidence:.2f}). "
             f"Основные темы: {', '.join(domain_tags)}. "
-            f"Рекомендованные агенты будут помогать с обработкой этого контента."
         )
 
+        if pattern_analysis.is_repeated:
+            reasoning += f"Обнаружен повторяющийся паттерн: {pattern_analysis.pattern_description}"
+
         return {
-            'context': context,
+            'context': context_analysis.context,
+            'intent': intent_analysis.intent_type,
             'domain_tags': domain_tags,
-            'reasoning': reasoning
+            'reasoning': reasoning,
+            'pattern_analysis': pattern_analysis
         }
 
-    def determine_recommended_agents(self, context: str, domain_tags: List[str]) -> List[str]:
+    def _generate_domain_tags(self, context: str, intent: str) -> List[str]:
         """
-        Determine which agents are recommended based on context and domain tags
+        Generate domain tags based on context and intent
 
         Args:
             context: The identified context
+            intent: The identified intent
+
+        Returns:
+            List of domain tags
+        """
+        domain_tags = []
+
+        # Context-based tags
+        context_tags = {
+            'личный': ['мотивация', 'саморазвитие', 'эмоции'],
+            'профессиональный': ['карьера', 'проекты', 'коммуникация'],
+            'кризисный': ['стресс', 'решение проблем', 'поддержка'],
+            'общий': ['информация', 'знания', 'советы']
+        }
+        domain_tags.extend(context_tags.get(context, []))
+
+        # Intent-based tags
+        intent_tags = {
+            'вопрос': ['поиск ответа', 'любопытство'],
+            'задача': ['планирование', 'исполнение'],
+            'наблюдение': ['анализ', 'данные'],
+            'опыт': ['личный опыт', 'примеры'],
+            'вывод': ['логика', 'конклюзия'],
+            'размышление': ['идеи', 'теории'],
+            'кризис': ['срочность', 'проблема', 'помощь']
+        }
+        domain_tags.extend(intent_tags.get(intent, []))
+
+        return list(set(domain_tags))
+
+    def determine_recommended_agents(self, context: str, intent: str, domain_tags: List[str]) -> List[str]:
+        """
+        Determine which agents are recommended based on context, intent and domain tags
+
+        Args:
+            context: The identified context
+            intent: The identified intent
             domain_tags: The identified domain tags
 
         Returns:
@@ -90,31 +138,32 @@ class ReflectionAgent(Agent):
 
         # Context-specific agents
         context_agents = {
-            'личный рост': ['PersonalGrowthAgent', 'GoalSettingAgent'],
-            'бизнес': ['BusinessAnalysisAgent', 'DecisionAgent'],
-            'психология': ['PsychologyAgent', 'EmotionAnalysisAgent'],
-            'обучение': ['LearningAgent', 'ContentRecommendationAgent'],
+            'личный': ['PersonalGrowthAgent', 'EmotionSupportAgent'],
+            'профессиональный': ['BusinessAnalysisAgent', 'CareerCoachAgent'],
+            'кризисный': ['CrisisManagementAgent', 'SupportAgent'],
+            'общий': ['GeneralQAAgent', 'InformationAgent'],
             'неизвестно': ['GeneralAnalysisAgent']
         }
 
-        # Domain-specific agents
-        domain_agents = {
-            'маркетинг': ['MarketingAgent'],
-            'стратегия': ['StrategyAgent'],
-            'финансы': ['FinanceAgent'],
-            'мотивация': ['MotivationAgent'],
-            'саморазвитие': ['SelfDevelopmentAgent'],
-            'эмоции': ['EmotionAgent'],
-            'образование': ['EducationAgent']
+        # Intent-specific agents
+        intent_agents = {
+            'вопрос': ['QAAgent', 'ResearchAgent'],
+            'задача': ['TaskPlannerAgent', 'ExecutionAgent'],
+            'наблюдение': ['DataAnalysisAgent', 'InsightAgent'],
+            'опыт': ['ExperienceAgent', 'StorytellingAgent'],
+            'вывод': ['LogicAgent', 'ConclusionAgent'],
+            'размышление': ['IdeaAgent', 'BrainstormingAgent'],
+            'кризис': ['CrisisAgent', 'EmergencyAgent']
         }
 
-        # Get agents based on context and domains
-        agents = base_agents + context_agents.get(context, [])
+        # Get agents based on context and intent
+        agents = base_agents + context_agents.get(context, []) + intent_agents.get(intent, [])
 
-        # Add domain-specific agents
-        for tag in domain_tags:
-            if tag in domain_agents:
-                agents.extend(domain_agents[tag])
+        # Add domain-specific agents (simplified for this example)
+        if 'стресс' in domain_tags:
+            agents.append('StressManagementAgent')
+        if 'карьера' in domain_tags:
+            agents.append('CareerAgent')
 
         return list(set(agents))  # Remove duplicates
 
@@ -134,8 +183,12 @@ class ReflectionAgent(Agent):
         # Determine recommended agents
         recommended_agents = self.determine_recommended_agents(
             content_analysis['context'],
+            content_analysis['intent'],
             content_analysis['domain_tags']
         )
+
+        # Get routing decision
+        routing_decision = self.router.analyze_and_route(input_data.content)
 
         # Find similar case using Weaviate
         similarity_case_id = self.memory.find_similar_case(input_data.content)
@@ -153,10 +206,14 @@ class ReflectionAgent(Agent):
         # Create output
         return ReflectionOutput(
             context=content_analysis['context'],
+            intent=content_analysis['intent'],
             domain_tags=content_analysis['domain_tags'],
             recommended_agents=recommended_agents,
             reasoning=content_analysis['reasoning'],
-            similarity_case_id=similarity_case_id
+            similarity_case_id=similarity_case_id,
+            is_repeated_pattern=content_analysis['pattern_analysis'].is_repeated,
+            next_agent=routing_decision.next_agent,
+            priority=routing_decision.priority
         )
 
     def run(self, input_data: ReflectionInput) -> ReflectionOutput:
@@ -195,3 +252,6 @@ class ReflectionAgent(Agent):
 
         # Convert to JSON string
         return result.json()
+
+
+
