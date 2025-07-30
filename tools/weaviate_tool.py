@@ -2,77 +2,93 @@
 
 
 
+import requests
+from typing import List, Dict, Optional
 
-import os
-import weaviate
-from typing import Optional
+class WeaviateTool:
+    def __init__(self, weaviate_url: str = "http://localhost:8081"):
+        self.weaviate_url = weaviate_url.rstrip("/")
+        self.collection = "DocumentChunk"
 
-# Временные параметры подключения (должны быть перемещены в settings.py)
-WEAVIATE_URL = os.getenv("WEAVIATE_URL", "http://localhost:8080")
-WEAVIATE_API_KEY = os.getenv("WEAVIATE_API_KEY", None)
+    def add_document_chunk(
+        self,
+        text: str,
+        embedding: List[float],
+        metadata: Optional[Dict] = None,
+    ) -> bool:
+        """
+        Добавляет фрагмент документа в Weaviate.
+        """
+        url = f"{self.weaviate_url}/v1/objects"
+        payload = {
+            "class": self.collection,
+            "properties": {
+                "text": text,
+                **(metadata or {})
+            },
+            "vector": embedding,
+        }
+        try:
+            response = requests.post(url, json=payload)
+            response.raise_for_status()
+            return True
+        except requests.RequestException as e:
+            print(f"[ERROR] Weaviate insert failed: {e}")
+            return False
 
-# Инициализация клиента
-auth_config = None
-if WEAVIATE_API_KEY:
-    auth_config = weaviate.auth.AuthApiKey(api_key=WEAVIATE_API_KEY)
-
-connection_params = weaviate.connect.ConnectionParams.from_url(WEAVIATE_URL, grpc_port=50051)
-client = weaviate.WeaviateClient(
-    connection_params=connection_params,
-    auth_client_secret=auth_config
-)
-
-DEFAULT_CLASS_NAME = "AgentMemory"
-
-def ensure_class_exists(class_name: str = DEFAULT_CLASS_NAME):
-    """
-    Создаёт схему в Weaviate, если она ещё не существует.
-    """
-    if not client.schema.contains({"class": class_name}):
-        client.schema.create_class({
-            "class": class_name,
-            "vectorizer": "text2vec-openai",  # или другой векторизатор, если локальный
-            "properties": [
-                {
-                    "name": "content",
-                    "dataType": ["text"]
-                },
-                {
-                    "name": "user_id",
-                    "dataType": ["string"]
-                }
-            ]
-        })
-
-def store_document(text: str, user_id: str, class_name: str = DEFAULT_CLASS_NAME):
-    """
-    Сохраняет документ в память.
-    """
-    ensure_class_exists(class_name)
-    client.data_object.create(
-        data_object={"content": text, "user_id": user_id},
-        class_name=class_name
-    )
-
-def semantic_search(query: str, user_id: Optional[str] = None, class_name: str = DEFAULT_CLASS_NAME, top_k: int = 5):
-    """
-    Выполняет семантический поиск по памяти.
-    """
-    filters = None
-    if user_id:
-        filters = {
-            "path": ["user_id"],
-            "operator": "Equal",
-            "valueString": user_id
+    def search_similar_chunks(
+        self,
+        embedding: List[float],
+        top_k: int = 5,
+    ) -> List[Dict]:
+        """
+        Выполняет семантический поиск по эмбеддингу.
+        """
+        url = f"{self.weaviate_url}/v1/graphql"
+        query = {
+            "query": f"""
+            {{
+              Get {{
+                {self.collection}(
+                  nearVector: {{
+                    vector: {embedding},
+                    certainty: 0.7
+                  }},
+                  limit: {top_k}
+                ) {{
+                  text
+                  _additional {{
+                    distance
+                  }}
+                }}
+              }}
+            }}
+            """
         }
 
-    result = client.query.get(class_name, ["content", "user_id"])\
-        .with_near_text({"concepts": [query]})\
-        .with_where(filters)\
-        .with_limit(top_k)\
-        .do()
+        try:
+            response = requests.post(url, json=query)
+            response.raise_for_status()
+            return response.json()["data"]["Get"][self.collection]
+        except requests.RequestException as e:
+            print(f"[ERROR] Weaviate search failed: {e}")
+            return []
 
-    return result["data"]["Get"].get(class_name, [])
+if __name__ == "__main__":
+    from semantic_embedder import SemanticEmbedder
+
+    embedder = SemanticEmbedder()
+    weaviate = WeaviateTool()
+
+    text = "Пример содержимого для сохранения в базу знаний"
+    embedding = embedder.embed(text)
+
+    if embedding:
+        weaviate.add_document_chunk(text, embedding, metadata={"source": "manual"})
+
+        results = weaviate.search_similar_chunks(embedding)
+        for r in results:
+            print(f"→ {r['text']} (distance: {r['_additional']['distance']})")
 
 
 
