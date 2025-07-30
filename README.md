@@ -27,6 +27,12 @@ This repository contains a multi-agent system built on CrewAI for analyzing and 
      - **SemanticTaggingAgent**: Extracts semantic tags and entities using LLM
      - **SimilarityMatcherAgent**: Finds similar documents using Weaviate
      - **DocumentGroupAssignerAgent**: Assigns documents to groups/clusters
+   - **ContextualizationAgent**: Context enrichment and memory management (agents/contextualization_agent/)
+     - **ReferenceMatcherAgent**: Finds knowledge base references using Weaviate
+     - **KnowledgeGraphAgent**: Builds knowledge graphs from document content
+     - **DocumentRelinkerAgent**: Links related document fragments
+     - **ContextMemoryAgent**: Manages long-term context memory
+     - **ContextualizerCore**: Coordinates all contextualization sub-agents
    - **Reflection Agents**: Advanced agents for document analysis (agents/reflection/)
      - **FactVerificationAgent**: Verifies factual accuracy of statements (requires LLM)
      - **AdvancedSentimentAndToneAnalyzer**: Analyzes sentiment and tone (requires LLM)
@@ -101,6 +107,26 @@ print(categorization)
 # }
 ```
 
+# Contextualize document
+from agents.contextualization_agent.contextualizer_core import ContextualizerCore
+contextualizer = ContextualizerCore()
+context = contextualizer.process_document(text)
+print(context)
+# Output: {
+#   'text': 'Договор № 345/2023 от 01.07.2023 между ООО «Пример» и ИП Иванов',
+#   'chunks': ['Договор № 345/2023 от 01.07.2023', 'между ООО «Пример» и ИП Иванов'],
+#   'knowledge_graph': {
+#     'entities': ['ООО Пример', 'Иванов', 'Договор', 'Москва'],
+#     'relations': [('ООО Пример', 'заключает', 'Договор'), ...]
+#   },
+#   'references': {
+#     'Договор № 345/2023 от 01.07.2023': [{'content': 'Совпадение 1', 'title': 'Документ 1', 'certainty': 0.9}],
+#     'между ООО «Пример» и ИП Иванов': [{'content': 'Совпадение 2', 'title': 'Документ 2', 'certainty': 0.8}]
+#   },
+#   'clusters': [[{'source': 'document', 'text': 'Договор № 345/2023 от 01.07.2023'}, ...]]
+# }
+```
+
 ## Current Status
 
 The system has been implemented with a focus on reflection agents. However, several key agents require LLM (Language Model) integration for full functionality:
@@ -136,3 +162,6 @@ To complete the implementation, the following tasks need to be addressed:
 - Add advanced analytics capabilities
 - Integrate with external APIs for enhanced data processing
 - Complete LLM integration for all reflection agents
+- Implement proper NLP and vector search dependencies for ContextualizationAgent sub-agents
+- Integrate spaCy and networkx for KnowledgeGraphAgent
+- Add Weaviate integration for ReferenceMatcherAgent
