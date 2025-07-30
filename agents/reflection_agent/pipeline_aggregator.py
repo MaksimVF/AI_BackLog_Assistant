@@ -11,6 +11,7 @@ from typing import Dict, Any
 from agents.reflection_agent.contextual_router import route_text, router
 from agents.analyzers.text_cleaner import TextCleaner
 from agents.analyzers.entity_extractor import EntityExtractor
+from handlers.report_handler import ReportHandler
 
 class PipelineAggregator:
     """
@@ -26,6 +27,7 @@ class PipelineAggregator:
         """Initialize pipeline components."""
         self.text_cleaner = TextCleaner()
         self.entity_extractor = EntityExtractor()
+        self.report_handler = ReportHandler()
 
     def process(self, text: str) -> Dict[str, Any]:
         """
@@ -44,12 +46,22 @@ class PipelineAggregator:
         # Step 3: Route to appropriate sub-agent
         agent_name = route_text(cleaned_text)
 
-        return {
+        # Step 4: Process with specific handler if needed
+        result = {
             "original_text": text,
             "cleaned_text": cleaned_text,
             "entities": entities,
             "agent_name": agent_name
         }
+
+        # If it's a report, use the report handler
+        if agent_name == "report_handler":
+            # Use the text as document_text for the report handler
+            self.report_handler.document_text = cleaned_text
+            report_result = self.report_handler.run()
+            result["report_data"] = report_result
+
+        return result
 
     def process_batch(self, texts: list[str]) -> list[Dict[str, Any]]:
         """
@@ -83,21 +95,54 @@ if __name__ == "__main__":
     # Create pipeline
     pipeline = PipelineAggregator()
 
-    # Sample text
-    sample_text = """
+    # Sample text - contract
+    contract_text = """
     Настоящий договор аренды заключён между ООО "Ромашка" и ИП Иванов И.И.
     Сумма аренды: 50000 руб. в месяц. Срок: с 15.07.2023 по 15.07.2024.
     Контактный телефон: 8 (495) 123-45-67, email: contact@romashka.ru
     """
 
-    # Process text
-    result = pipeline.process(sample_text)
+    # Sample text - report
+    report_text = """
+    Ежемесячный отчёт о продажах за январь 2023 года
+    Общая выручка: 1 500 000 руб.
+    Количество клиентов: 456
+    Средний чек: 7 123 руб.
 
-    print("Processing Results:")
-    print(f"Original Text: {result['original_text'][:100]}...")
-    print(f"Cleaned Text: {result['cleaned_text'][:100]}...")
-    print(f"Entities: {result['entities']}")
-    print(f"Agent Name: {result['agent_name']}")
+    | Продукт       | Количество | Сумма       |
+    |---------------|------------|-------------|
+    | Виджет A      | 120        | 300 000 руб.|
+    | Виджет B      | 85         | 250 000 руб.|
+    | Виджет C      | 150        | 400 000 руб.|
+    """
+
+    # Process contract text
+    print("Processing Contract:")
+    print("=" * 50)
+    contract_result = pipeline.process(contract_text)
+    print(f"Original Text: {contract_result['original_text'][:100]}...")
+    print(f"Cleaned Text: {contract_result['cleaned_text'][:100]}...")
+    print(f"Entities: {contract_result['entities']}")
+    print(f"Agent Name: {contract_result['agent_name']}")
+    print()
+
+    # Process report text
+    print("Processing Report:")
+    print("=" * 50)
+    report_result = pipeline.process(report_text)
+    print(f"Original Text: {report_result['original_text'][:100]}...")
+    print(f"Cleaned Text: {report_result['cleaned_text'][:100]}...")
+    print(f"Entities: {report_result['entities']}")
+    print(f"Agent Name: {report_result['agent_name']}")
+
+    # If it's a report, show the report data
+    if "report_data" in report_result:
+        print("\nReport Data:")
+        print(f"Report Type: {report_result['report_data']['subtype']}")
+        print(f"Period: {report_result['report_data']['metadata'].get('period', 'unknown')}")
+        print(f"Currency: {report_result['report_data']['metadata'].get('currency', 'unknown')}")
+        print(f"Key Metrics: {report_result['report_data']['metadata'].get('key_metrics', {})}")
+        print(f"Number of Tables: {len(report_result['report_data']['tables'])}")
 
     # Show available agents
     print(f"\nAvailable Agents: {pipeline.get_available_agents()}")
