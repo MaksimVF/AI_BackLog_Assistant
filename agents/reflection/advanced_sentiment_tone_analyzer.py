@@ -2,7 +2,9 @@
 
 
 
-from core.llm_client import chat_completion
+
+# TODO: Import LLM client when available
+# from core.llm_client import chat_completion
 
 class AdvancedSentimentAndToneAnalyzer:
     """
@@ -17,15 +19,12 @@ class AdvancedSentimentAndToneAnalyzer:
         """
         Анализирует текст по параметрам тональности, стиля и эмоциональной окраски.
         """
-        prompt = (
-            "Проанализируй текст по следующим параметрам:\n"
-            "- Эмоциональная тональность (позитивная, негативная, нейтральная)\n"
-            "- Стиль (формальный, разговорный, технический и т.д.)\n"
-            "- Наличие эмоционально окрашенных выражений\n\n"
-            f"Текст:\n{text}"
-        )
-        response = chat_completion(prompt)
-        return {"sentiment_analysis": response}
+        # TODO: Implement LLM-based sentiment analysis when dependencies are available
+        # For now, return a placeholder result
+        return {
+            "sentiment_analysis": "Углубленный анализ тональности требует настройки LLM. Пожалуйста, добавьте зависимость core.llm_client."
+        }
+
 
 
 

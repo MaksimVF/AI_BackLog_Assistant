@@ -3,7 +3,9 @@
 
 
 
-from core.llm_client import chat_completion
+
+# TODO: Import LLM client when available
+# from core.llm_client import chat_completion
 
 class SummaryGenerator:
     """
@@ -17,13 +19,12 @@ class SummaryGenerator:
         """
         Создает краткое резюме текста.
         """
-        prompt = (
-            "Создай краткое резюме следующего текста, сохраняя ключевые факты и смысл. "
-            "Используй нейтральный и точный стиль.\n\n"
-            f"{text}"
-        )
-        response = chat_completion(prompt)
-        return {"summary": response}
+        # TODO: Implement LLM-based summary generation when dependencies are available
+        # For now, return a placeholder result
+        return {
+            "summary": "Генерация резюме требует настройки LLM. Пожалуйста, добавьте зависимость core.llm_client."
+        }
+
 
 
 
