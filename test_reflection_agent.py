@@ -79,6 +79,9 @@ def test_reflection_agent():
         print(f"Next Agent: {result.next_agent}")
         print(f"Priority: {result.priority}")
         print(f"Reasoning: {result.reasoning}")
+        print(f"Sentiment: {result.sentiment} (Score: {result.sentiment_score:.2f})")
+        print(f"Topics: {result.topics}")
+        print(f"Temporal Patterns: {result.temporal_patterns}")
 
         # Check if context and intent match expected
         context_correct = result.context == test_case['expected_context']

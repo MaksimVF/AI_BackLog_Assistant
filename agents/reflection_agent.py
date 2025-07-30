@@ -9,7 +9,12 @@ from crewai import Agent, Task
 from memory.weaviate_client import WeaviateMemory
 from .analyzers.context_classifier import ContextClassifier, ContextAnalysis
 from .analyzers.intent_identifier import IntentIdentifier, IntentAnalysis
+
 from .analyzers.pattern_matcher import PatternMatcher, PatternAnalysis
+from .analyzers.sentiment_analyzer import SentimentAnalyzer, SentimentAnalysis
+from .analyzers.temporal_analyzer import TemporalAnalyzer, TemporalPattern
+from .analyzers.topic_modeler import TopicModeler, TopicAnalysis
+
 from .router import Router, RoutingDecision
 import json
 import logging
@@ -35,6 +40,12 @@ class ReflectionOutput(BaseModel):
     priority: Literal['high', 'medium', 'low']  # Processing priority
     user_id: Optional[str] = None  # User identifier
 
+    # New analysis fields
+    sentiment: Optional[str] = None  # Sentiment analysis result
+    sentiment_score: Optional[float] = None  # Sentiment score (-1 to 1)
+    topics: Optional[List[str]] = None  # Detected topics
+    temporal_patterns: Optional[List[str]] = None  # Detected temporal patterns
+
 class ReflectionAgent(Agent):
     """Agent that performs deep analysis of input data to determine context, required agents, and novelty"""
 
@@ -54,6 +65,9 @@ class ReflectionAgent(Agent):
         object.__setattr__(self, 'context_classifier', ContextClassifier())
         object.__setattr__(self, 'intent_identifier', IntentIdentifier())
         object.__setattr__(self, 'pattern_matcher', PatternMatcher(memory=self.memory))
+        object.__setattr__(self, 'sentiment_analyzer', SentimentAnalyzer())
+        object.__setattr__(self, 'temporal_analyzer', TemporalAnalyzer(memory=self.memory))
+        object.__setattr__(self, 'topic_modeler', TopicModeler())
         object.__setattr__(self, 'user_id', user_id)
 
         # Fetch user history if available
@@ -126,7 +140,11 @@ class ReflectionAgent(Agent):
             is_repeated_pattern=content_analysis['pattern_analysis'].is_repeated,
             next_agent=routing_decision.next_agent,
             priority=routing_decision.priority,
-            user_id=input_data.user_id
+            user_id=input_data.user_id,
+            sentiment=content_analysis['sentiment_analysis'].sentiment,
+            sentiment_score=content_analysis['sentiment_analysis'].sentiment_score,
+            topics=content_analysis['topic_analysis'].topics,
+            temporal_patterns=[p.pattern_type for p in content_analysis['temporal_patterns']]
         )
 
     def analyze_content(self, content: str) -> Dict[str, Any]:
@@ -144,25 +162,42 @@ class ReflectionAgent(Agent):
         intent_analysis = self.intent_identifier.identify(content)
         pattern_analysis = self.pattern_matcher.analyze_patterns(content)
 
-        # Determine domain tags based on context and intent
+        # New analyzers
+        sentiment_analysis = self.sentiment_analyzer.analyze(content)
+        topic_analysis = self.topic_modeler.analyze_topics(content)
+
+        # Temporal analysis (if user_id is available)
+        temporal_patterns = []
+        if self.user_id:
+            temporal_patterns = self.temporal_analyzer.analyze_patterns(self.user_id, content)
+
+        # Determine domain tags based on context, intent, and topics
         domain_tags = self._generate_domain_tags(context_analysis.context, intent_analysis.intent_type)
+        domain_tags.extend(topic_analysis.topics)
 
         # Generate comprehensive reasoning
         reasoning = (
             f"Контекст: {context_analysis.context} ({context_analysis.confidence:.2f}). "
             f"Намерение: {intent_analysis.intent_type} ({intent_analysis.confidence:.2f}). "
+            f"Сентимент: {sentiment_analysis.sentiment} ({sentiment_analysis.sentiment_score:.2f}). "
             f"Основные темы: {', '.join(domain_tags)}. "
         )
 
         if pattern_analysis.is_repeated:
-            reasoning += f"Обнаружен повторяющийся паттерн: {pattern_analysis.pattern_description}"
+            reasoning += f"Обнаружен повторяющийся паттерн: {pattern_analysis.pattern_description}. "
+
+        if temporal_patterns:
+            reasoning += f"Временные паттерны: {', '.join(p.pattern_type for p in temporal_patterns)}. "
 
         return {
             'context': context_analysis.context,
             'intent': intent_analysis.intent_type,
             'domain_tags': domain_tags,
             'reasoning': reasoning,
-            'pattern_analysis': pattern_analysis
+            'pattern_analysis': pattern_analysis,
+            'sentiment_analysis': sentiment_analysis,
+            'topic_analysis': topic_analysis,
+            'temporal_patterns': temporal_patterns
         }
 
     def _generate_domain_tags(self, context: str, intent: str) -> List[str]:
