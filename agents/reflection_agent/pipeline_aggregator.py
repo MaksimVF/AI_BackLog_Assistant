@@ -1,20 +1,20 @@
 
 
-# agents/agent_2/pipeline_aggregator.py
+# agents/reflection_agent/pipeline_aggregator.py
 
 """
-Pipeline aggregator for Agent 2 that coordinates text processing, cleaning,
+Pipeline aggregator for ReflectionAgent that coordinates text processing, cleaning,
 entity extraction, and routing to appropriate sub-agents.
 """
 
 from typing import Dict, Any
-from agents.agent_2.contextual_router import route_text, router
+from agents.reflection_agent.contextual_router import route_text, router
 from agents.analyzers.text_cleaner import TextCleaner
 from agents.analyzers.entity_extractor import EntityExtractor
 
 class PipelineAggregator:
     """
-    Coordinates the processing pipeline for Agent 2.
+    Coordinates the processing pipeline for ReflectionAgent.
 
     Steps:
     1. Text cleaning
@@ -75,7 +75,7 @@ class PipelineAggregator:
         :param agent_name: name of the agent
         :return: description of the agent
         """
-        from agents.agent_2.contextual_router import get_route_description
+        from agents.reflection_agent.contextual_router import get_route_description
         return get_route_description(agent_name)
 
 # Example usage

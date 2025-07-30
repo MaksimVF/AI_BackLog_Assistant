@@ -13,7 +13,7 @@ This repository contains a multi-agent system built on CrewAI for analyzing and 
 
 1. **Agents**: Specialized modules for different processing tasks
    - ReflectionAgent: Analyzes input data and determines required actions
-   - Agent 2: Contextual document router for semantic routing (agents/agent_2/)
+   - ReflectionAgent: Contextual document router for semantic routing (agents/reflection_agent/)
    - (Future agents for video, audio, image, document, and text processing)
 
 2. **Memory**: Weaviate-based vector store for data persistence

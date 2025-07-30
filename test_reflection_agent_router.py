@@ -1,12 +1,12 @@
 
 
-# test_agent_2_router.py
+# test_reflection_agent_router.py
 
 """
-Test script for Agent 2 contextual router.
+Test script for ReflectionAgent contextual router.
 """
 
-from agents.agent_2.contextual_router import route_text, get_all_routes, get_route_description
+from agents.reflection_agent.contextual_router import route_text, get_all_routes, get_route_description
 
 def test_contextual_router():
     """Test the contextual router with various document types."""

@@ -13,7 +13,7 @@ import logging
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from handlers.report_handler import ReportHandler
-from agents.agent_2.contextual_router import route_text
+from agents.reflection_agent.contextual_router import route_text
 
 def test_report_handler():
     """Test the report handler with different types of reports."""

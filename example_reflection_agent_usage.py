@@ -1,18 +1,18 @@
 
 
 
-# example_agent_2_usage.py
+# example_reflection_agent_usage.py
 
 """
-Example usage of Agent 2 contextual router for document processing.
+Example usage of ReflectionAgent contextual router for document processing.
 """
 
-from agents.agent_2.contextual_router import route_text
+from agents.reflection_agent.contextual_router import route_text
 
 def main():
     """Demonstrate how to use the contextual router."""
 
-    print("📄 Agent 2: Contextual Document Router")
+    print("📄 ReflectionAgent: Contextual Document Router")
     print("=" * 50)
 
     # Example documents

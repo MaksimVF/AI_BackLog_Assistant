@@ -1,9 +1,9 @@
 
-# Agent 2: Contextual Document Router
+# ReflectionAgent: Contextual Document Router
 
 ## Overview
 
-Agent 2 provides semantic routing capabilities for directing documents to appropriate sub-agents based on their content. This module uses the `semantic_router` package with embedding-based classification to determine the most suitable handler for different types of documents.
+ReflectionAgent provides semantic routing capabilities for directing documents to appropriate sub-agents based on their content. This module uses the `semantic_router` package with embedding-based classification to determine the most suitable handler for different types of documents.
 
 ## Features
 
@@ -34,7 +34,7 @@ The required dependencies are automatically installed with the main project. The
 ## Usage
 
 ```python
-from agents.agent_2.contextual_router import route_text
+from agents.reflection_agent.contextual_router import route_text
 
 # Example document text
 document = "Настоящий договор аренды заключён между сторонами..."
@@ -69,7 +69,7 @@ Get the description for a specific route.
 Run the test script to verify the routing functionality:
 
 ```bash
-python test_agent_2_router.py
+python test_reflection_agent_router.py
 ```
 
 ## Integration
@@ -89,4 +89,4 @@ This module can be integrated with the main agent system by:
 
 ## Example
 
-See `example_agent_2_usage.py` for a complete usage example.
+See `example_reflection_agent_usage.py` for a complete usage example.

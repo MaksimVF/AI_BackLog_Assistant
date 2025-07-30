@@ -3,7 +3,7 @@
 Test cases for the pipeline aggregator.
 """
 
-from agents.agent_2.pipeline_aggregator import PipelineAggregator
+from agents.reflection_agent.pipeline_aggregator import PipelineAggregator
 
 def test_pipeline_aggregator():
     """Test the pipeline aggregator with different document types."""
