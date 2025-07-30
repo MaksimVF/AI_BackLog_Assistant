@@ -1,33 +1,35 @@
 
 
 
+
 """
-Test script for ReflectionAgent functionality.
+Test script for ReflectionAgent with a more complex example.
 """
 
 from agents.reflection import ReflectionAgent
 
-def test_reflection_agent():
-    """Test the ReflectionAgent with sample data."""
+def test_reflection_complex():
+    """Test the ReflectionAgent with incomplete contract data."""
 
     # Create the ReflectionAgent
     agent = ReflectionAgent()
     print("✅ ReflectionAgent initialized successfully")
 
-    # Sample data for testing
+    # Sample data with missing fields and low quality
     sample_data = {
-        "text": "This is a sample contract between Company A and Company B. "
-                "The contract includes terms and conditions but is missing signatures.",
-        "terms": "Standard terms apply",
-        "conditions": "Payment within 30 days",
-        "text_coverage": 0.75,
-        "ocr_quality": 0.85
+        "text": "This contract is between Company A and Company B. "
+                "It mentions payment terms but lacks signatures and dates. "
+                "The document has pronoun references like 'he' and 'they' without clear context.",
+        "terms": "Payment within 30 days",
+        "text_coverage": 0.5,  # Low coverage
+        "ocr_quality": 0.6,    # Low OCR quality
+        "audio_quality": 0.65  # Low audio quality
     }
 
     # Sample metadata
     sample_metadata = {
         "data_type": "contract",
-        "source": "uploaded_pdf"
+        "source": "scanned_pdf"
     }
 
     print("\n📄 Sample Data:")
@@ -58,6 +60,9 @@ def test_reflection_agent():
     print(f"\n💡 Final Recommendations ({len(results['final_recommendations'])}):")
     for i, rec in enumerate(results["final_recommendations"]):
         print(f"  {i+1}. {rec['type']}: {rec['message']}")
+        if "recommendations" in rec:
+            for j, sub_rec in enumerate(rec["recommendations"]):
+                print(f"     - {sub_rec['action']}: {sub_rec['reason']}")
 
     # Show agent status
     print(f"\n🔧 Agent Status:")
@@ -66,6 +71,7 @@ def test_reflection_agent():
         print(f"  {agent_name}: {agent_status.get('status', 'unknown')}")
 
 if __name__ == "__main__":
-    test_reflection_agent()
+    test_reflection_complex()
+
 
 
