@@ -1,0 +1,15 @@
+{
+  "bug_report": {
+    "description": "Auto-generated category for bug_report",
+    "examples": [
+      "Ошибка в системе: При попытке сохранить файл возникает исключение NullPointerException."
+    ]
+  },
+  "feature_request": {
+    "description": "Auto-generated category for feature_request",
+    "examples": [
+      "Требования к новому API: Должен поддерживать REST и возвращать JSON.",
+      "Запрос на новую функцию: Нужна возможность экспорта данных в Excel."
+    ]
+  }
+}

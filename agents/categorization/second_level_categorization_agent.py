@@ -10,6 +10,7 @@ Second Level Categorization Agent
 """
 
 from .second_level_categorization.domain_router import categorize_document_by_domain
+from .trainer import log_categorization_result, retrain_domain_categorizer
 from tools.llm_tool import LLMTool
 from config.settings import EMBEDDING_MODEL_NAME
 
@@ -18,19 +19,22 @@ class SecondLevelCategorizationAgent:
     Performs second-level categorization of documents after initial domain detection.
 
     This agent routes documents to domain-specific categorizers for more granular
-    classification within a specific domain. It includes fallback to LLM for low-confidence
-    categorizations.
+    classification within a specific domain. It includes:
+    - Fallback to LLM for low-confidence categorizations
+    - Self-learning capabilities through logging and retraining
     """
 
-    def __init__(self, confidence_threshold=0.6):
+    def __init__(self, confidence_threshold=0.6, enable_learning=True):
         """
         Initialize the categorization agent.
 
         Args:
             confidence_threshold: Minimum confidence score to accept embedding-based
                                 categorization without LLM fallback (default: 0.6)
+            enable_learning: Whether to enable self-learning through logging (default: True)
         """
         self.confidence_threshold = confidence_threshold
+        self.enable_learning = enable_learning
         self.llm_tool = LLMTool()
 
     def categorize(self, document: str, domain: str) -> dict:
@@ -50,7 +54,13 @@ class SecondLevelCategorizationAgent:
                 "source": str
             }
         """
-        return categorize_document_by_domain(document, domain)
+        result = categorize_document_by_domain(document, domain)
+
+        # Log the result for potential retraining if learning is enabled
+        if self.enable_learning:
+            log_categorization_result(domain, result, document)
+
+        return result
 
     def categorize_with_fallback(self, document: str, domain: str) -> dict:
         """
@@ -75,16 +85,44 @@ class SecondLevelCategorizationAgent:
                 # If LLM provides a different category with higher confidence, use it
                 if (llm_result["confidence"] > result["confidence"] or
                     llm_result["confidence"] >= self.confidence_threshold):
-                    return {
+                    final_result = {
                         "domain": domain,
                         "category": llm_result["category"],
                         "confidence": llm_result["confidence"],
                         "source": f"llm_fallback_{result['source']}"
                     }
+
+                    # Log the improved result if learning is enabled
+                    if self.enable_learning:
+                        log_categorization_result(domain, final_result, document)
+
+                    return final_result
             except Exception as e:
                 print(f"LLM fallback failed, using original result: {e}")
 
         return result
+
+    def retrain_categorizer(self, domain: str) -> bool:
+        """
+        Retrains the categorizer for a specific domain with new examples.
+
+        Args:
+            domain: The domain to retrain
+
+        Returns:
+            True if retraining was successful, False otherwise
+        """
+        return retrain_domain_categorizer(domain)
+
+    def retrain_all_categorizers(self) -> int:
+        """
+        Retrains all domain categorizers.
+
+        Returns:
+            Number of successfully retrained categorizers
+        """
+        from .trainer import retrain_all_categorizers
+        return retrain_all_categorizers()
 
     def _llm_categorization(self, document: str, domain: str) -> dict:
         """
