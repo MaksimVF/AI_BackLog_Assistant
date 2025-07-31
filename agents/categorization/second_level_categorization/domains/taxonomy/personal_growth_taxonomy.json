@@ -1,0 +1,25 @@
+
+
+
+{
+  "goal_setting": {
+    "description": "Постановка личных или профессиональных целей"
+  },
+  "self_reflection": {
+    "description": "Рефлексия или анализ личного опыта"
+  },
+  "learning_plan": {
+    "description": "План обучения или саморазвития"
+  },
+  "motivation": {
+    "description": "Мотивационные заметки или цитаты"
+  },
+  "habit_tracking": {
+    "description": "Отслеживание привычек или рутины"
+  },
+  "personal_challenge": {
+    "description": "Личный вызов или испытание"
+  }
+}
+
+

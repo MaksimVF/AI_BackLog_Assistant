@@ -1,0 +1,23 @@
+
+
+{
+  "medical_record": {
+    "description": "Медицинская карта или история болезни"
+  },
+  "prescription": {
+    "description": "Рецепт на лекарства"
+  },
+  "diagnostic_report": {
+    "description": "Результаты диагностики или анализа"
+  },
+  "treatment_plan": {
+    "description": "План лечения или реабилитации"
+  },
+  "patient_complaint": {
+    "description": "Жалоба пациента на лечение или обслуживание"
+  },
+  "research_paper": {
+    "description": "Научная статья или исследование в медицине"
+  }
+}
+

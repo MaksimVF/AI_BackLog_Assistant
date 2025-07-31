@@ -9,12 +9,22 @@ Domain Router for Second Level Categorization
 from .base import BaseContextualCategorizer
 from .domains.it import ITCategorizer
 from .domains.finance import FinanceCategorizer
+from .domains.legal import LegalCategorizer
+from .domains.healthcare import HealthcareCategorizer
+from .domains.personal_growth import PersonalGrowthCategorizer
+from .domains.customer_support import CustomerSupportCategorizer
+from .domains.project_management import ProjectManagementCategorizer
 from .domains.fallback import FallbackCategorizer
 
 # Registry of domain-specific categorizers
 DOMAIN_CATEGORIZERS = {
     "it": ITCategorizer(),
     "finance": FinanceCategorizer(),
+    "legal": LegalCategorizer(),
+    "healthcare": HealthcareCategorizer(),
+    "personal_growth": PersonalGrowthCategorizer(),
+    "customer_support": CustomerSupportCategorizer(),
+    "project_management": ProjectManagementCategorizer(),
     "fallback": FallbackCategorizer()
 }
 

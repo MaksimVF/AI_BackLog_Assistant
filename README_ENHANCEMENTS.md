@@ -333,3 +333,88 @@ storage_data = builder.build_metadata_for_storage(user_input)
 
 These enhancements significantly improve the AI Backlog Assistant's ability to understand user context and intent, leading to better routing, more accurate responses, and an overall improved user experience.
 
+## Domain-Specific Categorization Enhancements
+
+### Overview
+We have significantly enhanced the SecondLevelCategorizationAgent by adding domain-specific categorizers for various industries and use cases. This expansion allows the system to better handle documents from different domains with more accurate and relevant categorization.
+
+### New Domain-Specific Categorizers
+
+#### 1. LegalCategorizer
+**Purpose**: Classifies legal documents and requests
+**Categories**:
+- contract: Юридический договор или соглашение
+- court_decision: Решение суда или арбитража
+- legal_opinion: Юридическое заключение или мнение
+- complaint: Жалоба или исковое заявление
+- regulation: Нормативный акт или постановление
+- legal_consultation: Запрос на юридическую консультацию
+
+#### 2. HealthcareCategorizer
+**Purpose**: Classifies medical and healthcare documents
+**Categories**:
+- medical_record: Медицинская карта или история болезни
+- prescription: Рецепт на лекарства
+- diagnostic_report: Результаты диагностики или анализа
+- treatment_plan: План лечения или реабилитации
+- patient_complaint: Жалоба пациента на лечение или обслуживание
+- research_paper: Научная статья или исследование в медицине
+
+#### 3. PersonalGrowthCategorizer
+**Purpose**: Classifies personal development and self-improvement documents
+**Categories**:
+- goal_setting: Постановка личных или профессиональных целей
+- self_reflection: Рефлексия или анализ личного опыта
+- learning_plan: План обучения или саморазвития
+- motivation: Мотивационные заметки или цитаты
+- habit_tracking: Отслеживание привычек или рутины
+- personal_challenge: Личный вызов или испытание
+
+#### 4. CustomerSupportCategorizer
+**Purpose**: Classifies customer support tickets and requests
+**Categories**:
+- technical_issue: Техническая проблема или ошибка
+- billing_question: Вопрос по оплате или счету
+- feature_request: Запрос на новую функцию или улучшение
+- complaint: Жалоба на продукт или сервис
+- general_question: Общий вопрос о продукте или услуге
+- account_issue: Проблема с аккаунтом или доступом
+
+#### 5. ProjectManagementCategorizer
+**Purpose**: Classifies project management documents
+**Categories**:
+- project_plan: План проекта или дорожная карта
+- task_list: Список задач или чеклист
+- meeting_notes: Заметки или протокол встречи
+- risk_assessment: Оценка рисков или проблем
+- progress_report: Отчёт о прогрессе или статусе
+- resource_allocation: Распределение ресурсов или бюджета
+
+### Implementation Details
+
+- Each domain categorizer follows the same pattern as the existing IT and Finance categorizers
+- Uses embedding-based similarity matching for categorization
+- Each categorizer has its own taxonomy file in JSON format
+- Domain router automatically selects the appropriate categorizer based on the detected domain
+
+### Benefits
+
+1. **Improved Accuracy**: Domain-specific categorization provides more relevant results than generic classification
+2. **Extensibility**: Easy to add new domains by following the established pattern
+3. **Better User Experience**: Users from different industries get more meaningful categorization
+4. **Enhanced Automation**: More precise categorization enables better downstream processing and routing
+
+### Usage Example
+
+```python
+from agents.categorization.second_level_categorization_agent import SecondLevelCategorizationAgent
+
+agent = SecondLevelCategorizationAgent()
+
+# Example legal document
+legal_doc = "Договор аренды №789 от 2025-02-20. Арендодатель: ООО 'Недвижимость Плюс'"
+result = agent.categorize(legal_doc, "legal")
+print(result)
+# Output: {'category': 'contract', 'confidence': 0.785, 'source': 'legal', 'domain': 'legal'}
+```
+

@@ -1,0 +1,21 @@
+
+{
+  "contract": {
+    "description": "Юридический договор или соглашение"
+  },
+  "court_decision": {
+    "description": "Решение суда или арбитража"
+  },
+  "legal_opinion": {
+    "description": "Юридическое заключение или мнение"
+  },
+  "complaint": {
+    "description": "Жалоба или исковое заявление"
+  },
+  "regulation": {
+    "description": "Нормативный акт или постановление"
+  },
+  "legal_consultation": {
+    "description": "Запрос на юридическую консультацию"
+  }
+}

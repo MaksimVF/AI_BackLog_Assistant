@@ -31,6 +31,11 @@ This repository contains a multi-agent system built on CrewAI for analyzing and 
      - **SecondLevelCategorizationAgent**: Performs domain-specific categorization
        - **ITCategorizer**: Classifies IT-related documents (bug reports, API specs, etc.)
        - **FinanceCategorizer**: Classifies finance documents (invoices, reports, etc.)
+       - **LegalCategorizer**: Classifies legal documents (contracts, court decisions, etc.)
+       - **HealthcareCategorizer**: Classifies medical documents (records, prescriptions, etc.)
+       - **PersonalGrowthCategorizer**: Classifies personal development documents (goals, reflections, etc.)
+       - **CustomerSupportCategorizer**: Classifies support tickets (technical issues, billing questions, etc.)
+       - **ProjectManagementCategorizer**: Classifies project documents (plans, task lists, etc.)
        - **FallbackCategorizer**: Handles general documents
        - **DomainRouter**: Routes documents to appropriate domain-specific categorizers
    - **ContextualizationAgent**: Context enrichment and memory management (agents/contextualization_agent/)
