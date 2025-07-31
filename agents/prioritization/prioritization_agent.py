@@ -24,11 +24,17 @@ class PrioritizationAgent:
     Combines scoring, bottleneck detection, and criticality classification.
     """
 
-    def __init__(self):
+    def __init__(self, llm_client=None):
+        """
+        Initialize with optional LLM client for enhanced estimation.
+
+        Args:
+            llm_client: Optional LLM client for better parameter estimation
+        """
         self.scorer = ScoringAgent()
         self.bottleneck_detector = BottleneckDetectorAgent()
         self.criticality_classifier = CriticalityClassifierAgent()
-        self.effort_estimator = EffortEstimatorAgent()
+        self.effort_estimator = EffortEstimatorAgent(llm_client)
 
     def prioritize(self, task: TaskData) -> PriorityResult:
         """
@@ -80,6 +86,9 @@ class PrioritizationAgent:
         if task.get("is_dependency"):
             reasoning.append("Has dependencies")
 
+        # Add criticality reasoning
+        reasoning.append(self.criticality_classifier.explain(task))
+
         # Create result
         result: PriorityResult = {
             "task_id": task.get("task_id", ""),
@@ -105,6 +114,34 @@ class PrioritizationAgent:
             List of PriorityResult
         """
         return [self.prioritize(task) for task in tasks]
+
+    def configure_thresholds(self, critical_threshold: float = 8.0, high_threshold: float = 6.0, medium_threshold: float = 4.0):
+        """
+        Configure criticality thresholds.
+
+        Args:
+            critical_threshold: Minimum score for critical classification
+            high_threshold: Minimum score for high classification
+            medium_threshold: Minimum score for medium classification
+        """
+        self.criticality_classifier = CriticalityClassifierAgent(
+            critical_threshold=critical_threshold,
+            high_threshold=high_threshold,
+            medium_threshold=medium_threshold
+        )
+
+    def configure_bottleneck_thresholds(self, score_threshold: float = 3.0, effort_impact_ratio: float = 0.5):
+        """
+        Configure bottleneck detection thresholds.
+
+        Args:
+            score_threshold: Minimum score to avoid bottleneck classification
+            effort_impact_ratio: Minimum acceptable impact/effort ratio
+        """
+        self.bottleneck_detector = BottleneckDetectorAgent(
+            score_threshold=score_threshold,
+            effort_impact_ratio=effort_impact_ratio
+        )
 
 
 

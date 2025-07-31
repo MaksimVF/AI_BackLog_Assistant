@@ -52,11 +52,11 @@ This repository contains a multi-agent system built on CrewAI for analyzing and 
      - **FactVerificationAgent**: Verifies factual accuracy of statements (requires LLM)
      - **AdvancedSentimentAndToneAnalyzer**: Analyzes sentiment and tone (requires LLM)
      - **SummaryGenerator**: Generates document summaries (requires LLM)
-    - **PrioritizationAgent**: Assigns RICE\/ICE score, finds bottlenecks, returns priority status
-    - **ScoringAgent**: Calculates ICE\/RICE scores with automatic parameter estimation
-    - **BottleneckDetectorAgent**: Identifies task bottlenecks and dependencies
-    - **CriticalityClassifierAgent**: Classifies tasks as critical\/high\/medium\/low
-    - **EffortEstimatorAgent**: Estimates effort when not provided
+- **PrioritizationAgent**: Enhanced prioritization with configurable thresholds, LLM integration, and detailed reasoning
+- **ScoringAgent**: Calculates ICE/RICE scores with automatic parameter estimation and LLM support
+- **BottleneckDetectorAgent**: Enhanced bottleneck detection with configurable thresholds and risk analysis
+- **CriticalityClassifierAgent**: Advanced criticality classification with effort-impact ratio and risk factor analysis
+- **EffortEstimatorAgent**: Enhanced effort estimation with LLM integration and fallback heuristics
    - (Future agents for video, audio, image, document, and text processing)
 
 2. **Memory**: Weaviate-based vector store for data persistence
@@ -83,6 +83,11 @@ This repository contains a multi-agent system built on CrewAI for analyzing and 
 - ✅ FallbackCategorizer for general documents
 - ✅ DomainRouter for categorization routing
 - ✅ Embedding-based classification with sentence-transformers
+- ✅ Enhanced PrioritizationAgent with configurable thresholds and LLM integration
+- ✅ Enhanced BottleneckDetectorAgent with risk analysis and configurable thresholds
+- ✅ Enhanced CriticalityClassifierAgent with effort-impact ratio and risk factor analysis
+- ✅ Enhanced EffortEstimatorAgent with LLM integration and improved heuristics
+- ✅ Comprehensive test coverage for all prioritization components
 - ✅ PrioritizationAgent with ICE\/RICE scoring and bottleneck detection
 - ✅ Test suite for categorization functionality
 - ✅ Self-learning mechanism for categorization improvement
