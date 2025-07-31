@@ -1,0 +1,23 @@
+{
+  "invoice": {
+    "description": "Auto-generated category for invoice",
+    "examples": [
+      "Счёт на оплату №12345 от 2025-01-15. Сумма: 150,000 рублей.",
+      "Счёт на оплату №12345 от 2025-01-15. Сумма: 150,000 рублей."
+    ]
+  },
+  "financial_report": {
+    "description": "Auto-generated category for financial_report",
+    "examples": [
+      "Отчёт о доходах за квартал: Прибыль увеличилась на 15%.",
+      "Отчёт о доходах за квартал: Прибыль увеличилась на 15%."
+    ]
+  },
+  "bank_statement": {
+    "description": "Auto-generated category for bank_statement",
+    "examples": [
+      "Заявка на кредит: Сумма 500,000 рублей, срок 5 лет.",
+      "Заявка на кредит: Сумма 500,000 рублей, срок 5 лет."
+    ]
+  }
+}

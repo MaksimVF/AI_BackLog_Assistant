@@ -25,11 +25,21 @@ class ITCategorizer(BaseContextualCategorizer):
         if os.path.exists(taxonomy_path):
             with open(taxonomy_path, "r", encoding="utf-8") as f:
                 self.taxonomy = json.load(f)
-                # Generate embeddings for category descriptions
-                self.embeddings = {
-                    category: get_embedding(details["description"])
-                    for category, details in self.taxonomy.items()
-                }
+                # Generate embeddings for category descriptions and examples
+                self.embeddings = {}
+                for category, details in self.taxonomy.items():
+                    # Start with category description
+                    category_emb = get_embedding(details["description"])
+
+                    # If examples exist, create a combined embedding
+                    if "examples" in details and details["examples"]:
+                        example_embeddings = [get_embedding(ex) for ex in details["examples"]]
+                        if example_embeddings:
+                            # Average of description and example embeddings
+                            example_embeddings.append(category_emb)
+                            category_emb = np.mean(example_embeddings, axis=0)
+
+                    self.embeddings[category] = category_emb
         else:
             # Default taxonomy if file not found
             self.taxonomy = {
