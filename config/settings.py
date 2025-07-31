@@ -41,3 +41,6 @@ QUEUE_NAMES = {
     "image": "image_processing",
     "transcription": "transcription"
 }
+
+# NLP и эмбеддинги
+EMBEDDING_MODEL_NAME = os.getenv("EMBEDDING_MODEL_NAME", "intfloat/multilingual-e5-small")

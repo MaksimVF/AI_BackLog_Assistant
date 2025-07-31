@@ -94,6 +94,19 @@ def test_second_level_categorization():
     general_result = agent.categorize(general_document, "fallback")
     print(f"General Document Result: {general_result}")
 
+    # Test categorization with fallback
+    print("\n--- Testing LLM Fallback ---")
+    agent_with_fallback = SecondLevelCategorizationAgent(confidence_threshold=0.8)
+
+    # Test with a document that might have low confidence
+    ambiguous_document = """
+    Это документ с неясным содержанием, который может быть трудно классифицировать.
+    Он содержит элементы из разных категорий.
+    """
+
+    fallback_result = agent_with_fallback.categorize_with_fallback(ambiguous_document, "it")
+    print(f"Fallback Result: {fallback_result}")
+
     # Verify results
     assert it_result["domain"] == "it"
     assert finance_result["domain"] == "finance"
@@ -103,6 +116,12 @@ def test_second_level_categorization():
     assert customer_support_result["domain"] == "customer_support"
     assert project_management_result["domain"] == "project_management"
     assert general_result["domain"] == "fallback"
+
+    # Verify that fallback result has expected structure
+    assert "domain" in fallback_result
+    assert "category" in fallback_result
+    assert "confidence" in fallback_result
+    assert "source" in fallback_result
 
     print("All tests passed!")
 
