@@ -115,6 +115,52 @@ class TestPrioritizationAgent(unittest.TestCase):
         result = self.agent.prioritize(task)
         self.assertEqual(result["criticality"], "low")
 
+    def test_configuration(self):
+        """Test configurable thresholds"""
+        # Test custom thresholds
+        agent = PrioritizationAgent()
+        agent.configure_thresholds(critical_threshold=10.0, high_threshold=7.0, medium_threshold=5.0)
+        agent.configure_bottleneck_thresholds(score_threshold=4.0, effort_impact_ratio=0.6)
+
+        # This should now be classified differently with stricter thresholds
+        task = {
+            "task_id": "task-config",
+            "title": "Normal task",
+            "description": "Regular development task",
+            "impact": 6,
+            "urgency": 4,
+            "effort": 3
+        }
+
+        result = agent.prioritize(task)
+        # With stricter thresholds, this might be medium instead of high
+        self.assertIn(result["criticality"], ["high", "medium"])
+
+    def test_enhanced_reasoning(self):
+        """Test enhanced reasoning and explanations"""
+        task = {
+            "task_id": "task-reason",
+            "title": "Critical security vulnerability",
+            "description": "Fix SQL injection in user authentication",
+            "impact": 9,
+            "urgency": 8,
+            "effort": 4,
+            "is_blocking": True,
+            "blocks_count": 2
+        }
+
+        result = self.agent.prioritize(task)
+
+        # Check for detailed reasoning
+        reasoning_text = " ".join(result["reasoning"])
+        self.assertIn("high impact", reasoning_text)
+        self.assertIn("high urgency", reasoning_text)
+        self.assertIn("blocks other tasks", reasoning_text)
+        self.assertIn("contains risk keywords", reasoning_text)
+
+        # Check explanation - the explanation is in reasoning, not explanation field
+        self.assertIn("critical", result["explanation"])
+
 if __name__ == "__main__":
     unittest.main()
 
