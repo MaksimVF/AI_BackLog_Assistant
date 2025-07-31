@@ -13,6 +13,9 @@ This repository contains a multi-agent system built on CrewAI for analyzing and 
 - **Advanced Document Processing**: Entity extraction, classification, and routing
 - **Multi-language Support**: Russian and English document analysis
 - **Reflection Agents**: Advanced agents for document analysis and reflection
+- **Self-Learning**: Categorization agents improve over time with new examples
+- **Production NLP**: Integrated sentence-transformers for high-quality embeddings
+- **LLM Fallback**: Automatic fallback to LLM for low-confidence categorizations
 
 ## Components
 
@@ -73,16 +76,18 @@ This repository contains a multi-agent system built on CrewAI for analyzing and 
 - ✅ FinanceCategorizer for finance documents
 - ✅ FallbackCategorizer for general documents
 - ✅ DomainRouter for categorization routing
-- ✅ Embedding-based classification with mock embeddings
+- ✅ Embedding-based classification with sentence-transformers
 - ✅ Test suite for categorization functionality
+- ✅ Self-learning mechanism for categorization improvement
+- ✅ LLM fallback for low-confidence categorizations
+- ✅ Production-ready NLP dependencies
+- ✅ Comprehensive logging and retraining system
 
 ### In Progress
 - ⏳ LLM integration for all sub-agents
-- ⏳ Self-learning mechanism for categorization improvement
 - ⏳ Advanced analytics capabilities
 
 ### Future Work
-- 🔮 Implement proper NLP and vector search dependencies
 - 🔮 Integrate spaCy and networkx for KnowledgeGraphAgent
 - 🔮 Complete LLM integration for reflection agents
 - 🔮 Add more domain-specific categorizers (legal, medical, etc.)
@@ -124,6 +129,7 @@ Run tests with:
 ```bash
 python test_categorization_agent.py
 python test_second_level_categorization.py
+python test_self_learning_categorization.py
 ```
 
 ## Future Plans
