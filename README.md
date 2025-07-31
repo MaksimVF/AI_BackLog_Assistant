@@ -1,4 +1,5 @@
 
+
 # AI BackLog Assistant
 
 This repository contains a multi-agent system built on CrewAI for analyzing and processing various types of user data (video, audio, images, documents, text).
@@ -27,6 +28,11 @@ This repository contains a multi-agent system built on CrewAI for analyzing and 
      - **SemanticTaggingAgent**: Extracts semantic tags and entities using LLM
      - **SimilarityMatcherAgent**: Finds similar documents using Weaviate
      - **DocumentGroupAssignerAgent**: Assigns documents to groups/clusters
+     - **SecondLevelCategorizationAgent**: Performs domain-specific categorization
+       - **ITCategorizer**: Classifies IT-related documents (bug reports, API specs, etc.)
+       - **FinanceCategorizer**: Classifies finance documents (invoices, reports, etc.)
+       - **FallbackCategorizer**: Handles general documents
+       - **DomainRouter**: Routes documents to appropriate domain-specific categorizers
    - **ContextualizationAgent**: Context enrichment and memory management (agents/contextualization_agent/)
      - **ReferenceMatcherAgent**: Finds knowledge base references using Weaviate
      - **KnowledgeGraphAgent**: Builds knowledge graphs from document content
@@ -48,112 +54,72 @@ This repository contains a multi-agent system built on CrewAI for analyzing and 
    - **Text Cleaner**: Normalizes and cleans text data (tools/text_cleaner.py)
    - **File Type Detector**: Identifies document types (utils/filetype_detector.py)
 
-## Getting Started
+## Implementation Status
 
-1. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
+### Completed
+- ✅ DocumentClassifierAgent with placeholder logic
+- ✅ DomainClassifierAgent with placeholder logic
+- ✅ SemanticTaggingAgent with placeholder logic
+- ✅ SimilarityMatcherAgent with placeholder logic
+- ✅ DocumentGroupAssignerAgent with placeholder logic
+- ✅ CategorizationAgent coordinator
+- ✅ SecondLevelCategorizationAgent with domain-specific categorizers
+- ✅ ITCategorizer for IT-related documents
+- ✅ FinanceCategorizer for finance documents
+- ✅ FallbackCategorizer for general documents
+- ✅ DomainRouter for categorization routing
+- ✅ Embedding-based classification with mock embeddings
+- ✅ Test suite for categorization functionality
 
-2. Start Weaviate (locally or via Docker)
+### In Progress
+- ⏳ LLM integration for all sub-agents
+- ⏳ Self-learning mechanism for categorization improvement
+- ⏳ Advanced analytics capabilities
 
-3. Run the system:
-   ```bash
-   python main.py
-   ```
+### Future Work
+- 🔮 Implement proper NLP and vector search dependencies
+- 🔮 Integrate spaCy and networkx for KnowledgeGraphAgent
+- 🔮 Complete LLM integration for reflection agents
+- 🔮 Add more domain-specific categorizers (legal, medical, etc.)
+- 🔮 Implement FastAPI interface for production deployment
 
-## Usage Example
+## Setup
+
+1. Clone the repository
+2. Install dependencies: `pip install -r requirements.txt`
+3. Set up Weaviate instance
+4. Configure environment variables
+
+## Usage
 
 ```python
-from analyzers.document_parser import DocumentParser
-from analyzers.contextual_router import ContextualRouter
 from agents.categorization.categorization_agent import CategorizationAgent
 
 # Initialize components
-parser = DocumentParser()
-router = ContextualRouter()
 categorizer = CategorizationAgent()
 
 # Process a document
 text = "Договор № 345/2023 от 01.07.2023 между ООО «Пример» и ИП Иванов"
 
-# Extract entities
-entities = parser.parse(text)
-print(entities)
-# Output: {'date': '01.07.2023', 'sum': '120 000,00 руб', ...}
-
-# Route document
-context = router.route("example_contract.txt")
-print(context["route"])
-# Output: 'contract_handler'
-
 # Categorize document
-categorization = categorizer.categorize_document(text)
-print(categorization)
+result = categorizer.categorize_document(text)
+print(result)
 # Output: {
-#   'document_type': 'договор',
-#   'domain': 'юриспруденция',
-#   'semantic_tags': ['договор', 'ООО', 'ИП', 'поставка', 'товары'],
-#   'similar_documents': [
-#     {'id': 'doc_1', 'score': 0.91, 'summary': 'Похожий документ 1'},
-#     {'id': 'doc_2', 'score': 0.87, 'summary': 'Похожий документ 2'}
-#   ],
-#   'group': {
-#     'group_id': 'group_001',
-#     'group_name': 'Общие документы',
-#     'confidence': 0.85,
-#     'tags': ['документ', 'общий', 'неклассифицированный']
-#   }
+#   "document_type": "contract",
+#   "domain": "legal",
+#   "second_level_category": {"category": "contract", "confidence": 0.95, "source": "legal"},
+#   "semantic_tags": ["agreement", "date", "parties"],
+#   "similar_documents": [...],
+#   "group": "legal_contracts"
 # }
+
+## Testing
+
+Run tests with:
+```bash
+python test_categorization_agent.py
+python test_second_level_categorization.py
 ```
-
-# Contextualize document
-from agents.contextualization_agent.contextualizer_core import ContextualizerCore
-contextualizer = ContextualizerCore()
-context = contextualizer.process_document(text)
-print(context)
-# Output: {
-#   'text': 'Договор № 345/2023 от 01.07.2023 между ООО «Пример» и ИП Иванов',
-#   'chunks': ['Договор № 345/2023 от 01.07.2023', 'между ООО «Пример» и ИП Иванов'],
-#   'knowledge_graph': {
-#     'entities': ['ООО Пример', 'Иванов', 'Договор', 'Москва'],
-#     'relations': [('ООО Пример', 'заключает', 'Договор'), ...]
-#   },
-#   'references': {
-#     'Договор № 345/2023 от 01.07.2023': [{'content': 'Совпадение 1', 'title': 'Документ 1', 'certainty': 0.9}],
-#     'между ООО «Пример» и ИП Иванов': [{'content': 'Совпадение 2', 'title': 'Документ 2', 'certainty': 0.8}]
-#   },
-#   'clusters': [[{'source': 'document', 'text': 'Договор № 345/2023 от 01.07.2023'}, ...]]
-# }
-```
-
-## Current Status
-
-The system has been implemented with a focus on reflection agents. However, several key agents require LLM (Language Model) integration for full functionality:
-
-### LLM-Dependent Agents (Requiring Future Implementation)
-
-1. **FactVerificationAgent** (agents/reflection/fact_verification_agent.py)
-   - Requires LLM client for factual verification
-   - Placeholder implementation currently returns a message about missing dependencies
-
-2. **AdvancedSentimentAndToneAnalyzer** (agents/reflection/advanced_sentiment_tone_analyzer.py)
-   - Requires LLM client for advanced sentiment analysis
-   - Placeholder implementation currently returns a message about missing dependencies
-
-3. **SummaryGenerator** (agents/reflection/summary_generator.py)
-   - Requires LLM client for document summarization
-   - Placeholder implementation currently returns a message about missing dependencies
-
-## Next Steps
-
-To complete the implementation, the following tasks need to be addressed:
-
-1. **Implement LLM Client**: Create the core LLM client module (`core.llm_client`)
-2. **Add Text Splitter Utility**: Implement the text splitting utility (`tools.utils.text_splitter`)
-3. **Integrate LLM Dependencies**: Update the placeholder implementations in the reflection agents
-4. **Test LLM Integrations**: Verify that all LLM-dependent agents work correctly with the new dependencies
-5. **Enhance CategorizationAgent**: Improve the sub-agents with more sophisticated classification and mapping algorithms
 
 ## Future Plans
 
@@ -164,5 +130,5 @@ To complete the implementation, the following tasks need to be addressed:
 - Complete LLM integration for all reflection agents
 - Implement proper NLP and vector search dependencies for ContextualizationAgent sub-agents
 - Integrate spaCy and networkx for KnowledgeGraphAgent
-- Add Weaviate integration for ReferenceMatcherAgent
-- Implement LLM integration for SummaryAgent sub-agents
+- Add more domain-specific categorizers for comprehensive document analysis
+

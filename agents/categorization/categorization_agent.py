@@ -6,6 +6,7 @@ from .domain_classifier_agent import DomainClassifierAgent
 from .semantic_tagging_agent import SemanticTaggingAgent
 from .similarity_matcher_agent import SimilarityMatcherAgent
 from .document_group_assigner_agent import DocumentGroupAssignerAgent
+from .second_level_categorization_agent import SecondLevelCategorizationAgent
 
 class CategorizationAgent:
     """
@@ -17,6 +18,7 @@ class CategorizationAgent:
     - Семантическая разметка
     - Поиск похожих документов
     - Назначение группы/кластера
+    - Вторичная категоризация в рамках домена
     """
 
     def __init__(self):
@@ -25,6 +27,7 @@ class CategorizationAgent:
         self.semantic_tagger = SemanticTaggingAgent()
         self.similarity_matcher = SimilarityMatcherAgent()
         self.group_assigner = DocumentGroupAssignerAgent()
+        self.second_level_categorizer = SecondLevelCategorizationAgent()
 
     def categorize_document(self, document_text: str, metadata: dict = None) -> dict:
         """
@@ -52,9 +55,13 @@ class CategorizationAgent:
         # Assign document group
         group = self.group_assigner.assign_group(document_text)
 
+        # Perform second-level categorization within the domain
+        second_level_category = self.second_level_categorizer.categorize(document_text, domain)
+
         return {
             "document_type": document_type,
             "domain": domain,
+            "second_level_category": second_level_category,
             "semantic_tags": tags,
             "similar_documents": similar_docs,
             "group": group

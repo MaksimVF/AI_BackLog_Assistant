@@ -1,0 +1,18 @@
+
+{
+  "bug_report": {
+    "description": "Описание ошибки или сбоя в системе"
+  },
+  "api_specification": {
+    "description": "Описание интерфейса API или контракта взаимодействия"
+  },
+  "feature_request": {
+    "description": "Запрос на новую функциональность или изменение"
+  },
+  "requirement": {
+    "description": "Формализованные требования к системе или продукту"
+  },
+  "deployment_instruction": {
+    "description": "Руководство по развертыванию приложения или сервиса"
+  }
+}
