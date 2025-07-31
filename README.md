@@ -16,6 +16,7 @@ This repository contains a multi-agent system built on CrewAI for analyzing and 
 - **Self-Learning**: Categorization agents improve over time with new examples
 - **Production NLP**: Integrated sentence-transformers for high-quality embeddings
 - **LLM Fallback**: Automatic fallback to LLM for low-confidence categorizations
+    - **Prioritization**: RICE\/ICE scoring, bottleneck detection, and criticality classification
 
 ## Components
 
@@ -51,6 +52,11 @@ This repository contains a multi-agent system built on CrewAI for analyzing and 
      - **FactVerificationAgent**: Verifies factual accuracy of statements (requires LLM)
      - **AdvancedSentimentAndToneAnalyzer**: Analyzes sentiment and tone (requires LLM)
      - **SummaryGenerator**: Generates document summaries (requires LLM)
+    - **PrioritizationAgent**: Assigns RICE\/ICE score, finds bottlenecks, returns priority status
+    - **ScoringAgent**: Calculates ICE\/RICE scores with automatic parameter estimation
+    - **BottleneckDetectorAgent**: Identifies task bottlenecks and dependencies
+    - **CriticalityClassifierAgent**: Classifies tasks as critical\/high\/medium\/low
+    - **EffortEstimatorAgent**: Estimates effort when not provided
    - (Future agents for video, audio, image, document, and text processing)
 
 2. **Memory**: Weaviate-based vector store for data persistence
@@ -77,6 +83,7 @@ This repository contains a multi-agent system built on CrewAI for analyzing and 
 - ✅ FallbackCategorizer for general documents
 - ✅ DomainRouter for categorization routing
 - ✅ Embedding-based classification with sentence-transformers
+- ✅ PrioritizationAgent with ICE\/RICE scoring and bottleneck detection
 - ✅ Test suite for categorization functionality
 - ✅ Self-learning mechanism for categorization improvement
 - ✅ LLM fallback for low-confidence categorizations
@@ -130,6 +137,7 @@ Run tests with:
 python test_categorization_agent.py
 python test_second_level_categorization.py
 python test_self_learning_categorization.py
+python test_prioritization_agent.py
 ```
 
 ## Future Plans
