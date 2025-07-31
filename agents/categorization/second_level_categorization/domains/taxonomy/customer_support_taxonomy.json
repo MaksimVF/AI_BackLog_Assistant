@@ -1,0 +1,27 @@
+
+
+
+
+{
+  "technical_issue": {
+    "description": "Техническая проблема или ошибка"
+  },
+  "billing_question": {
+    "description": "Вопрос по оплате или счету"
+  },
+  "feature_request": {
+    "description": "Запрос на новую функцию или улучшение"
+  },
+  "complaint": {
+    "description": "Жалоба на продукт или сервис"
+  },
+  "general_question": {
+    "description": "Общий вопрос о продукте или услуге"
+  },
+  "account_issue": {
+    "description": "Проблема с аккаунтом или доступом"
+  }
+}
+
+
+

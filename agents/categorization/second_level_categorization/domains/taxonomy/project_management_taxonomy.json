@@ -1,0 +1,29 @@
+
+
+
+
+
+{
+  "project_plan": {
+    "description": "План проекта или дорожная карта"
+  },
+  "task_list": {
+    "description": "Список задач или чеклист"
+  },
+  "meeting_notes": {
+    "description": "Заметки или протокол встречи"
+  },
+  "risk_assessment": {
+    "description": "Оценка рисков или проблем"
+  },
+  "progress_report": {
+    "description": "Отчёт о прогрессе или статусе"
+  },
+  "resource_allocation": {
+    "description": "Распределение ресурсов или бюджета"
+  }
+}
+
+
+
+
