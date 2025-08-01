@@ -20,7 +20,7 @@ from .style_and_tone_analyzer import StyleAndToneAnalyzer
 from .semantic_consistency_checker import SemanticConsistencyChecker
 from .fact_verification_agent import FactVerificationAgent
 from .advanced_sentiment_tone_analyzer import AdvancedSentimentAndToneAnalyzer
-from .summary_generator import SummaryGenerator
+from .document_summarizer import DocumentSummarizer
 
 __all__ = [
     "ReflectionAgent",
@@ -33,7 +33,7 @@ __all__ = [
     "SemanticConsistencyChecker",
     "FactVerificationAgent",
     "AdvancedSentimentAndToneAnalyzer",
-    "SummaryGenerator"
+    "DocumentSummarizer"
 ]
 
 

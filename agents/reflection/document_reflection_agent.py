@@ -18,7 +18,7 @@ from .conflict_detector import ConflictDetector
 from .style_and_tone_analyzer import StyleAndToneAnalyzer
 from .advanced_sentiment_tone_analyzer import AdvancedSentimentAndToneAnalyzer
 from .fact_verification_agent import FactVerificationAgent
-from .summary_generator import SummaryGenerator
+from .document_summarizer import DocumentSummarizer
 from .semantic_consistency_checker import SemanticConsistencyChecker
 
 class DocumentReflectionAgent:
@@ -40,7 +40,7 @@ class DocumentReflectionAgent:
         # Advanced LLM-based agents
         self.advanced_sentiment_analyzer = AdvancedSentimentAndToneAnalyzer()
         self.fact_verifier = FactVerificationAgent()
-        self.summary_generator = SummaryGenerator()
+        self.summary_generator = DocumentSummarizer()
 
         # Semantic analysis
         self.semantic_checker = SemanticConsistencyChecker()
