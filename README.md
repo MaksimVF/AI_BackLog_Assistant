@@ -6,8 +6,9 @@ This repository contains a multi-agent system built on CrewAI for analyzing and 
 
 ## Features
 
-- **Modular Architecture**: Each agent performs a specialized role
-- **Extensible Design**: Easy to add new agents and data types
+- **Pipeline Architecture**: Organized into three main pipelines (IPP, IMP, OP) for clear data flow
+- **Modular Architecture**: Each agent performs a specialized role within pipelines
+- **Extensible Design**: Easy to add new agents and data types to pipelines
 - **Vector Memory**: Uses Weaviate for efficient data storage and retrieval
 - **CrewAI Integration**: Manages agents and tasks through CrewAI framework
 - **Advanced Document Processing**: Entity extraction, classification, and routing
@@ -16,11 +17,18 @@ This repository contains a multi-agent system built on CrewAI for analyzing and 
 - **Self-Learning**: Categorization agents improve over time with new examples
 - **Production NLP**: Integrated sentence-transformers for high-quality embeddings
 - **LLM Fallback**: Automatic fallback to LLM for low-confidence categorizations
-    - **Prioritization**: RICE\/ICE scoring, bottleneck detection, and criticality classification
+- **Prioritization**: RICE/ICE scoring, bottleneck detection, and criticality classification
+- **Pipeline Coordination**: Clear data contracts and validation between pipeline stages
 
 ## Components
 
-1. **Agents**: Specialized modules for different processing tasks
+1. **Pipelines**: Organized processing pipelines for clear data flow
+   - **Input Processing Pipeline (IPP)**: Primary data ingestion and structuring
+   - **Information Manipulation Pipeline (IMP)**: Analysis, enrichment, and decision making
+   - **Output Pipeline (OP)**: Final result preparation and delivery
+   - **MainPipelineCoordinator**: Manages end-to-end pipeline coordination
+
+2. **Agents**: Specialized modules for different processing tasks
    - **ReflectionAgent**: Analyzes input data and determines required actions
    - **Contextual Router**: Semantic routing for document processing (analyzers/contextual_router.py)
    - **Document Classifier**: Categorizes documents by type (analyzers/document_classifier.py)
@@ -52,6 +60,11 @@ This repository contains a multi-agent system built on CrewAI for analyzing and 
      - **FactVerificationAgent**: Verifies factual accuracy of statements (requires LLM)
      - **AdvancedSentimentAndToneAnalyzer**: Analyzes sentiment and tone (requires LLM)
      - **SummaryGenerator**: Generates document summaries (requires LLM)
+   - **Information Manipulation Pipeline (IMP) Agents**:
+     - **ResultAggregatorAgent**: Aggregates results from IPP agents
+     - **ContextEnricherAgent**: Adds contextual information from knowledge bases
+     - **MetadataEnricherAgent**: Enhances metadata with analysis results
+     - **QualityAssuranceAgent**: Ensures final output quality
 - **PrioritizationAgent**: Enhanced prioritization with configurable thresholds, LLM integration, and detailed reasoning
 - **ScoringAgent**: Calculates ICE/RICE scores with automatic parameter estimation and LLM support
 - **BottleneckDetectorAgent**: Enhanced bottleneck detection with configurable thresholds and risk analysis
@@ -88,22 +101,30 @@ This repository contains a multi-agent system built on CrewAI for analyzing and 
 - ✅ Enhanced CriticalityClassifierAgent with effort-impact ratio and risk factor analysis
 - ✅ Enhanced EffortEstimatorAgent with LLM integration and improved heuristics
 - ✅ Comprehensive test coverage for all prioritization components
-- ✅ PrioritizationAgent with ICE\/RICE scoring and bottleneck detection
+- ✅ PrioritizationAgent with ICE/RICE scoring and bottleneck detection
 - ✅ Test suite for categorization functionality
 - ✅ Self-learning mechanism for categorization improvement
 - ✅ LLM fallback for low-confidence categorizations
 - ✅ Production-ready NLP dependencies
 - ✅ Comprehensive logging and retraining system
+- ✅ Pipeline architecture with IPP, IMP, and OP pipelines
+- ✅ Base pipeline class with validation and error handling
+- ✅ Main pipeline coordinator for end-to-end processing
+- ✅ IMP agents: ResultAggregatorAgent, ContextEnricherAgent, MetadataEnricherAgent, QualityAssuranceAgent
+- ✅ Data contracts and validation schemas for all pipelines
 
 ### In Progress
 - ⏳ LLM integration for all sub-agents
 - ⏳ Advanced analytics capabilities
+- ⏳ Integration of existing agents into new pipeline architecture
 
 ### Future Work
 - 🔮 Integrate spaCy and networkx for KnowledgeGraphAgent
 - 🔮 Complete LLM integration for reflection agents
 - 🔮 Add more domain-specific categorizers (legal, medical, etc.)
 - 🔮 Implement FastAPI interface for production deployment
+- 🔮 Add async processing support for pipelines
+- 🔮 Implement parallel processing for independent agents
 
 ## Setup
 
@@ -135,14 +156,75 @@ print(result)
 #   "group": "legal_contracts"
 # }
 
+### Using Pipeline Architecture
+
+```python
+from pipelines import MainPipelineCoordinator
+
+# Create pipeline coordinator
+coordinator = MainPipelineCoordinator()
+
+# Process data through complete pipeline
+result = coordinator.process_end_to_end(
+    document_id="doc_001",
+    raw_content="Text or binary content about AI pipeline architecture",
+    metadata={"source": "user_upload", "user": "researcher"}
+)
+
+print("Final Result:")
+print(f"Document ID: {result['document_id']}")
+print(f"Summary: {result['summary']}")
+print(f"Key Points: {result['key_points']}")
+print(f"Recommendations: {result['recommendations']}")
+print(f"Format: {result['delivery_format']}")
+
+# Output: {
+#   "document_id": "doc_001",
+#   "summary": "Comprehensive analysis of AI pipeline architecture...",
+#   "key_points": ["Pipeline stages", "Data flow", "Agent coordination"],
+#   "recommendations": ["Implement async processing", "Add monitoring"],
+#   "formatted_output": "Final formatted result",
+#   "delivery_format": "json"
+# }
+```
+
+### Using Individual Pipelines
+
+```python
+from pipelines import MainPipelineCoordinator
+
+coordinator = MainPipelineCoordinator()
+
+# Step 1: Input Processing Pipeline
+ipp_result = coordinator.process_ipp({
+    "document_id": "doc_001",
+    "raw_content": "Text content to process",
+    "metadata": {"source": "api"}
+})
+
+# Step 2: Information Manipulation Pipeline
+imp_result = coordinator.process_imp(ipp_result)
+
+# Step 3: Output Pipeline
+final_result = coordinator.process_op(imp_result)
+```
+
 ## Testing
 
 Run tests with:
 ```bash
+# Test categorization functionality
 python test_categorization_agent.py
 python test_second_level_categorization.py
 python test_self_learning_categorization.py
+
+# Test prioritization functionality
 python test_prioritization_agent.py
+
+# Test pipeline architecture
+python test_simple_pipeline.py
+python test_main_coordinator.py
+python test_pipeline.py
 ```
 
 ## Future Plans
