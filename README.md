@@ -156,3 +156,74 @@ python test_prioritization_agent.py
 - Integrate spaCy and networkx for KnowledgeGraphAgent
 - Add more domain-specific categorizers for comprehensive document analysis
 
+## System Administration Agents
+
+### Overview
+
+The system includes a hierarchical agent system for centralized administration, monitoring, and error handling. The system follows a super-agent pattern with specialized sub-agents for different administrative tasks.
+
+### Architecture
+
+The system consists of a `SuperAdminAgent` that coordinates several specialized sub-agents:
+
+1. **ErrorHandlerAgent** - Handles exceptions and errors
+2. **LogCollectorAgent** - Collects and manages system logs
+3. **NotificationAgent** - Sends alerts and notifications
+4. **SecurityAgent** - Handles access control and security monitoring
+5. **DiagnosticsAgent** - Runs system health checks and diagnostics
+6. **MonitoringAgent** - Monitors system resources and services
+
+### Directory Structure
+
+```
+agents/
+├── base.py                  # Base agent class
+├── super_admin_agent.py     # Main super agent
+└── system_admin/            # Sub-agents
+    ├── error_handler_agent.py
+    ├── log_collector_agent.py
+    ├── monitoring_agent.py
+    ├── notification_agent.py
+    ├── security_agent.py
+    └── diagnostics_agent.py
+```
+
+### Usage Example
+
+```python
+from agents.super_admin_agent import SuperAdminAgent
+
+# Initialize the super agent
+admin = SuperAdminAgent()
+
+# Check system health
+health_report = admin.health_check()
+print("System Health:", health_report)
+
+# Handle errors
+try:
+    # Some operation that might fail
+    pass
+except Exception as e:
+    admin.handle_exception(e, "module_name")
+
+# Check access permissions
+if admin.check_access("user_id", "read", "resource"):
+    # Grant access
+    pass
+else:
+    # Deny access
+    admin.notify_admin("Unauthorized access attempt")
+
+# Run security scan
+security_report = admin.run_security_scan()
+print("Security Status:", security_report)
+```
+
+### Testing
+
+Run tests with:
+```bash
+python -m unittest tests/test_system_admin_agents.py
+```
+
