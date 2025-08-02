@@ -1,0 +1,165 @@
+
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analytics - AI Backlog Assistant</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">AI Backlog Assistant</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="index.html">Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="project.html">Projects</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="analytics.html">Analytics</a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" href="settings.html">Settings</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <h1 class="mb-4">Analytics Dashboard</h1>
+
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Task Priority Distribution</h5>
+                        <canvas id="priorityChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Project Status Distribution</h5>
+                        <canvas id="statusChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Bottleneck Analysis</h5>
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Project</th>
+                                    <th>Bottleneck</th>
+                                    <th>Severity</th>
+                                    <th>Impact</th>
+                                    <th>Recommendation</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>AI Pipeline</td>
+                                    <td>Task #2 - Implementation</td>
+                                    <td><span class="badge bg-danger">High</span></td>
+                                    <td>Delays entire pipeline</td>
+                                    <td>Allocate additional resources</td>
+                                </tr>
+                                <tr>
+                                    <td>Document Processing</td>
+                                    <td>Task #5 - Testing</td>
+                                    <td><span class="badge bg-warning">Medium</span></td>
+                                    <td>May delay release</td>
+                                    <td>Prioritize testing activities</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Criticality Analysis</h5>
+                        <canvas id="criticalityChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Priority Chart
+        const priorityCtx = document.getElementById('priorityChart').getContext('2d');
+        const priorityChart = new Chart(priorityCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['High', 'Medium', 'Low'],
+                datasets: [{
+                    label: 'Task Priority Distribution',
+                    data: [8, 15, 7],
+                    backgroundColor: ['#ffc107', '#17a2b8', '#6c757d']
+                }]
+            }
+        });
+
+        // Status Chart
+        const statusCtx = document.getElementById('statusChart').getContext('2d');
+        const statusChart = new Chart(statusCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Active', 'On Hold', 'Completed', 'Cancelled'],
+                datasets: [{
+                    label: 'Project Status Distribution',
+                    data: [5, 2, 3, 1],
+                    backgroundColor: ['#28a745', '#6c757d', '#007bff', '#dc3545']
+                }]
+            }
+        });
+
+        // Criticality Chart
+        const criticalityCtx = document.getElementById('criticalityChart').getContext('2d');
+        const criticalityChart = new Chart(criticalityCtx, {
+            type: 'radar',
+            data: {
+                labels: ['Impact', 'Effort', 'Risk', 'Urgency', 'Dependency'],
+                datasets: [{
+                    label: 'Criticality Factors',
+                    data: [9, 7, 6, 8, 5],
+                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    borderWidth: 1
+                }]
+            }
+        });
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+
+
+
