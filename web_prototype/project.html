@@ -1,0 +1,164 @@
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Details - AI Backlog Assistant</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">AI Backlog Assistant</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="index.html">Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="project.html">Projects</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="analytics.html">Analytics</a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" href="settings.html">Settings</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <h1 class="mb-4">Project: AI Pipeline Architecture</h1>
+
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Project Information</h5>
+                        <p><strong>Status:</strong> <span class="badge bg-success">Active</span></p>
+                        <p><strong>Priority:</strong> <span class="badge bg-warning">High</span></p>
+                        <p><strong>Team:</strong> AI Development Team</p>
+                        <p><strong>Deadline:</strong> 2025-12-31</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Project Metrics</h5>
+                        <p><strong>Total Tasks:</strong> 45</p>
+                        <p><strong>Completed:</strong> 12 (27%)</p>
+                        <p><strong>High Priority:</strong> 8</p>
+                        <p><strong>Critical Bottlenecks:</strong> 2</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Backlog Items</h5>
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Title</th>
+                                    <th>Status</th>
+                                    <th>Priority</th>
+                                    <th>Assigned To</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>#1</td>
+                                    <td>Design pipeline architecture</td>
+                                    <td><span class="badge bg-success">Done</span></td>
+                                    <td><span class="badge bg-warning">High</span></td>
+                                    <td>Alice</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-secondary">View</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>#2</td>
+                                    <td>Implement base pipeline</td>
+                                    <td><span class="badge bg-primary">In Progress</span></td>
+                                    <td><span class="badge bg-warning">High</span></td>
+                                    <td>Bob</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-secondary">View</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>#3</td>
+                                    <td>Create IMP agents</td>
+                                    <td><span class="badge bg-secondary">Backlog</span></td>
+                                    <td><span class="badge bg-info">Medium</span></td>
+                                    <td>Unassigned</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-secondary">View</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Recommendations</h5>
+                        <ul class="list-group">
+                            <li class="list-group-item">
+                                <strong>Priority Analysis:</strong> Focus on task #2 as it's critical for the pipeline.
+                                <button class="btn btn-sm btn-success float-end">Accept</button>
+                                <button class="btn btn-sm btn-danger float-end me-2">Reject</button>
+                            </li>
+                            <li class="list-group-item">
+                                <strong>Bottleneck Detection:</strong> Task #3 requires additional resources.
+                                <button class="btn btn-sm btn-success float-end">Accept</button>
+                                <button class="btn btn-sm btn-danger float-end me-2">Reject</button>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Upload Document</h5>
+                        <form>
+                            <div class="mb-3">
+                                <label for="documentUpload" class="form-label">Choose file to upload</label>
+                                <input class="form-control" type="file" id="documentUpload">
+                            </div>
+                            <button type="submit" class="btn btn-primary">Upload and Analyze</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+
+
