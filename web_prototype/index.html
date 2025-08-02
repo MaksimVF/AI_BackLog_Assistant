@@ -1,0 +1,124 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Backlog Assistant - Prototype</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">AI Backlog Assistant</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="index.html">Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="project.html">Projects</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="analytics.html">Analytics</a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" href="settings.html">Settings</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <h1 class="mb-4">Dashboard</h1>
+
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Total Projects</h5>
+                        <p class="card-text display-4">12</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">High Priority Tasks</h5>
+                        <p class="card-text display-4">5</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Critical Bottlenecks</h5>
+                        <p class="card-text display-4">3</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Project List</h5>
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Project</th>
+                                    <th>Status</th>
+                                    <th>Priority</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>AI Pipeline Architecture</td>
+                                    <td><span class="badge bg-success">Active</span></td>
+                                    <td><span class="badge bg-warning">High</span></td>
+                                    <td>
+                                        <a href="project.html" class="btn btn-sm btn-primary">View</a>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Document Processing System</td>
+                                    <td><span class="badge bg-secondary">On Hold</span></td>
+                                    <td><span class="badge bg-info">Medium</span></td>
+                                    <td>
+                                        <a href="project.html" class="btn btn-sm btn-primary">View</a>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Recent Activity</h5>
+                        <ul class="list-group">
+                            <li class="list-group-item">New recommendation for AI Pipeline (2 hours ago)</li>
+                            <li class="list-group-item">Project status updated (1 day ago)</li>
+                            <li class="list-group-item">New document uploaded (2 days ago)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+
