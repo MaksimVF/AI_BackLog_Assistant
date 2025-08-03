@@ -18,7 +18,7 @@ This repository contains a multi-agent system built on CrewAI for analyzing and 
 - **Production NLP**: Integrated sentence-transformers for high-quality embeddings
 - **LLM Fallback**: Automatic fallback to LLM for low-confidence categorizations
 - **Prioritization**: RICE/ICE scoring, bottleneck detection, and criticality classification
-- **Group Authentication**: Web server with GitHub, GitLab, Bitbucket, and Google OAuth integration
+- **Group Authentication**: Web server with GitHub, GitLab, Bitbucket, Google, and Telegram OAuth integration
 - **Organization Support**: Team collaboration with role-based access control
 - **Pipeline Coordination**: Clear data contracts and validation between pipeline stages
 

@@ -38,6 +38,8 @@ app.config['BITBUCKET_CLIENT_ID'] = os.getenv('BITBUCKET_CLIENT_ID')
 app.config['BITBUCKET_CLIENT_SECRET'] = os.getenv('BITBUCKET_CLIENT_SECRET')
 app.config['GOOGLE_CLIENT_ID'] = os.getenv('GOOGLE_CLIENT_ID')
 app.config['GOOGLE_CLIENT_SECRET'] = os.getenv('GOOGLE_CLIENT_SECRET')
+app.config['TELEGRAM_CLIENT_ID'] = os.getenv('TELEGRAM_CLIENT_ID')
+app.config['TELEGRAM_CLIENT_SECRET'] = os.getenv('TELEGRAM_CLIENT_SECRET')
 
 # Initialize OAuth
 oauth = OAuth(app)
@@ -89,6 +91,18 @@ google = oauth.register(
     access_token_params=None,
     api_base_url='https://www.googleapis.com/oauth2/v1/',
     client_kwargs={'scope': 'openid profile email'},
+)
+
+telegram = oauth.register(
+    name='telegram',
+    client_id=app.config['TELEGRAM_CLIENT_ID'],
+    client_secret=app.config['TELEGRAM_CLIENT_SECRET'],
+    authorize_url='https://oauth.telegram.org/auth',
+    authorize_params=None,
+    access_token_url='https://oauth.telegram.org/token',
+    access_token_params=None,
+    api_base_url='https://api.telegram.org/',
+    client_kwargs={'scope': 'profile'},
 )
 
 # Initialize database
@@ -237,21 +251,8 @@ def settings():
                          google_connected=google_connected,
                          drive_status=drive_status,
                          sheets_status=sheets_status,
-                         calendar_status=calendar_status)
-
-@app.route('/google/login')
-@login_required
-def google_login():
-    """Redirect to Google OAuth2 login"""
-    return redirect('http://localhost:5006/google/login')
-
-@app.route('/google/callback')
-@login_required
-def google_callback():
-    """Handle Google OAuth2 callback"""
-    # This would be handled by the google_auth.py server
-    # For this example, we'll just redirect to settings
-    return redirect(url_for('settings'))
+                         calendar_status=calendar_status,
+                         current_user=current_user)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -766,6 +767,47 @@ def google_auth():
         # Update existing user
         user.google_id = user_data['id']
         user.username = user_data['name'].replace(' ', '_')
+        db.session.commit()
+
+    login_user(user)
+    return redirect(url_for('index'))
+
+@app.route('/auth/telegram')
+def telegram_login():
+    """Telegram login"""
+    redirect_uri = url_for('telegram_auth', _external=True)
+    return telegram.authorize_redirect(redirect_uri)
+
+@app.route('/auth/telegram/callback')
+def telegram_auth():
+    """Telegram auth callback"""
+    token = telegram.authorize_access_token()
+    resp = telegram.get('userinfo')
+    user_data = resp.json()
+
+    # Telegram user info structure
+    telegram_id = str(user_data.get('id'))
+    username = user_data.get('username') or f"telegram_{telegram_id}"
+    email = user_data.get('email') or f"{telegram_id}@telegram.user"
+
+    # Find or create user
+    user = User.query.filter_by(telegram_id=telegram_id).first()
+    if not user:
+        user = User.query.filter_by(email=email).first()
+
+    if not user:
+        # Create new user
+        user = User(
+            username=username,
+            email=email,
+            telegram_id=telegram_id
+        )
+        db.session.add(user)
+        db.session.commit()
+    else:
+        # Update existing user
+        user.telegram_id = telegram_id
+        user.username = username
         db.session.commit()
 
     login_user(user)
