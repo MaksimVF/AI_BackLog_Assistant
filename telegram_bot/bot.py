@@ -29,7 +29,7 @@ def start(update: Update, context: CallbackContext) -> None:
         '/start - Show this welcome message\n'
         '/help - Show help information\n'
         '/status - Get system status\n'
-        '/upload - Upload a document for analysis\n'
+        '/upload - Upload files (documents, videos, audio) for analysis\n'
         '/notifications - Manage your notifications\n'
     )
 
@@ -42,7 +42,7 @@ def help_command(update: Update, context: CallbackContext) -> None:
         '/start - Welcome message\n'
         '/help - This help information\n'
         '/status - Check system status\n'
-        '/upload - Upload documents\n'
+        '/upload - Upload files (documents, videos, audio)\n'
         '/notifications - Manage notifications\n'
     )
 
@@ -56,27 +56,60 @@ def status(update: Update, context: CallbackContext) -> None:
     )
 
 def upload(update: Update, context: CallbackContext) -> None:
-    """Handle document upload."""
+    """Handle file upload."""
     update.message.reply_text(
-        'Please upload a document file for analysis.\n'
-        'Supported formats: PDF, DOCX, TXT, CSV'
+        'Please upload a file for analysis.\n'
+        'Supported formats:\n'
+        '📄 Documents: PDF, DOCX, TXT, CSV\n'
+        '🎥 Videos: MP4, AVI, MOV\n'
+        '🎧 Audio: MP3, WAV, OGG'
     )
 
 def handle_document(update: Update, context: CallbackContext) -> None:
-    """Handle incoming documents."""
-    document = update.message.document
-    if document:
-        file_id = document.file_id
-        file_name = document.file_name
-        file_size = document.file_size
+    """Handle incoming documents, videos, and audio files."""
+    message = update.message
+    file_id = None
+    file_name = "unknown"
+    file_size = 0
+    mime_type = "application/octet-stream"
+    file_type = "📄 Document"
 
+    # Handle different message types
+    if message.document:
+        doc = message.document
+        file_id = doc.file_id
+        file_name = doc.file_name
+        file_size = doc.file_size
+        mime_type = doc.mime_type
+        if mime_type.startswith('video/'):
+            file_type = "🎥 Video"
+        elif mime_type.startswith('audio/'):
+            file_type = "🎧 Audio"
+
+    elif message.video:
+        vid = message.video
+        file_id = vid.file_id
+        file_name = f"video_{vid.file_id}.mp4"
+        file_size = vid.file_size
+        mime_type = "video/mp4"
+        file_type = "🎥 Video"
+
+    elif message.audio:
+        aud = message.audio
+        file_id = aud.file_id
+        file_name = f"audio_{aud.file_id}.mp3"
+        file_size = aud.file_size
+        mime_type = "audio/mpeg"
+        file_type = "🎧 Audio"
+
+    if file_id:
         # Download the file
         file = context.bot.get_file(file_id)
         file.download(f'downloads/{file_name}')
 
         update.message.reply_text(
-            f'Document received:\n'
-            f'📄 Name: {file_name}\n'
+            f'File received:\n'
+            f'{file_type} Name: {file_name}\n'
             f'📏 Size: {file_size} bytes\n'
             f'⏳ Processing...'
         )
@@ -96,7 +129,7 @@ def handle_document(update: Update, context: CallbackContext) -> None:
             context=update.effective_chat.id
         )
     else:
-        update.message.reply_text('Please send a valid document file.')
+        update.message.reply_text('Please send a valid file.')
 
 def notifications(update: Update, context: CallbackContext) -> None:
     """Manage notifications."""
@@ -138,6 +171,8 @@ def main() -> None:
 
     # Register message handlers
     dispatcher.add_handler(MessageHandler(Filters.document, handle_document))
+    dispatcher.add_handler(MessageHandler(Filters.video, handle_document))
+    dispatcher.add_handler(MessageHandler(Filters.audio, handle_document))
 
     # Register error handler
     dispatcher.add_error_handler(error)

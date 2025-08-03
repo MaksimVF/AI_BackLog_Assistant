@@ -20,18 +20,25 @@ This Telegram bot provides a convenient interface for users to interact with the
 - `/start` - Show welcome message with available commands
 - `/help` - Show help information
 - `/status` - Get current system status
-- `/upload` - Upload a document for analysis
+- `/upload` - Upload a file (document, video, or audio) for analysis
 - `/notifications` - Manage notification settings
 - `/notifications_enable` - Enable notifications
 - `/notifications_disable` - Disable notifications
 
-### Document Upload
+### File Upload
 
-Users can upload documents in various formats (PDF, DOCX, TXT, CSV) for analysis. The bot will:
+Users can upload files in various formats for analysis. The bot supports:
 
-1. Receive the document
-2. Send it for processing through the pipeline system
-3. Return recommendations and analysis results
+- **Documents**: PDF, DOCX, TXT, CSV
+- **Videos**: MP4, AVI, MOV
+- **Audio**: MP3, WAV, OGG
+
+The bot will:
+
+1. Receive the file
+2. Detect the file type (document, video, or audio)
+3. Send it for processing through the pipeline system
+4. Return recommendations and analysis results
 
 ### Notifications
 
