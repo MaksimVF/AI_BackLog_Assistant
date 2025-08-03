@@ -19,6 +19,8 @@ class TariffPlan(db.Model):
     included_limits = db.Column(db.JSON, nullable=False, default=dict)  # {"feature_name": limit}
     discounts = db.Column(db.JSON, nullable=False, default=dict)  # {"PAYG": discount_rate}
     access_features = db.Column(db.JSON, nullable=False, default=list)  # Premium/exclusive features
+    max_team_members = db.Column(db.Integer, default=1)  # Максимум членов команды
+    member_price = db.Column(db.Float, default=0.0)  # Цена за дополнительного члена
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -34,6 +36,7 @@ class OrganizationBalance(db.Model):
     auto_recharge = db.Column(db.Boolean, nullable=False, default=False)
     last_updated = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
     tariff_plan_id = db.Column(db.String(36), db.ForeignKey('tariff_plans.id'), nullable=True)
+    team_members = db.Column(db.Integer, default=1)  # Количество членов команды
 
     # Relationship to Organization and TariffPlan
     organization = db.relationship('Organization', backref=db.backref('balance', lazy=True, uselist=False))

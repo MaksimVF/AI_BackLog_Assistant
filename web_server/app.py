@@ -120,6 +120,14 @@ login_manager.login_view = 'login'
 from .billing_routes import billing_bp
 app.register_blueprint(billing_bp)
 
+# Register team management blueprint
+from .team_routes import team_bp
+app.register_blueprint(team_bp)
+
+# Register team management test blueprint
+from .team_routes_test import team_test_bp
+app.register_blueprint(team_test_bp)
+
 # Initialize password hasher
 ph = PasswordHasher()
 
