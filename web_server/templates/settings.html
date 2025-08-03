@@ -166,6 +166,30 @@
 
                 <div class="card mt-4">
                     <div class="card-body">
+                        <h5 class="card-title">Telegram Integration</h5>
+                        {% if not current_user.telegram_id %}
+                        <div class="alert alert-info">
+                            Telegram is not connected.
+                        </div>
+                        <a href="{{ url_for('telegram_login') }}" class="btn btn-primary">
+                            <i class="bi bi-telegram"></i> Connect Telegram Account
+                        </a>
+                        {% else %}
+                        <div class="alert alert-success">
+                            Telegram is connected.
+                        </div>
+                        <div class="mt-3">
+                            <h6>Telegram Notifications</h6>
+                            <div class="text-muted">
+                                Status: Connected
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="card mt-4">
+                    <div class="card-body">
                         <h5 class="card-title">Version Control Integrations</h5>
 
                         <div class="mt-3">
