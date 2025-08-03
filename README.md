@@ -82,6 +82,12 @@ This repository contains a multi-agent system built on CrewAI for analyzing and 
    - **Table Extractor**: Extracts tables from PDF, DOCX, TXT (utils/table_extractor.py)
    - **Text Cleaner**: Normalizes and cleans text data (tools/text_cleaner.py)
    - **File Type Detector**: Identifies document types (utils/filetype_detector.py)
+   - **Document Processor**: Extracts content from PDF, DOCX, TXT, CSV files (tools/document_processor.py)
+
+5. **Telegram Integration**: Document processing through Telegram bot
+   - **Telegram Bot**: Handles document uploads and responses (telegram_bot/bot.py)
+   - **Document Processing**: Extracts content and processes through pipelines
+   - **Response Formatting**: Formats pipeline results for Telegram display
 
 ## Implementation Status
 
@@ -127,7 +133,7 @@ This repository contains a multi-agent system built on CrewAI for analyzing and 
 - ⏳ Advanced analytics capabilities
 - ⏳ Integration of existing agents into new pipeline architecture
 - ⏳ API key management for external access
-- ⏳ Telegram bot integration
+- ✅ Telegram bot integration with document processing
 
 ### Future Work
 - 🔮 Integrate spaCy and networkx for KnowledgeGraphAgent
@@ -236,6 +242,10 @@ python test_prioritization_agent.py
 python test_simple_pipeline.py
 python test_main_coordinator.py
 python test_pipeline.py
+
+# Test Telegram document integration
+python test_document_processor.py
+python test_telegram_simple.py
 ```
 
 ## Future Plans
