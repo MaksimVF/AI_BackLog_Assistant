@@ -8,6 +8,7 @@ Flask Web Server for AI Backlog Assistant with Group Authentication Model
 
 import os
 import uuid
+import datetime
 from datetime import datetime
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify, g
 from flask_sqlalchemy import SQLAlchemy
@@ -16,6 +17,10 @@ from flask_login import LoginManager, UserMixin, login_user, login_required, log
 from flask_migrate import Migrate
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
+from google_auth import get_google_credentials
+from google_drive_connector import GoogleDriveConnector
+from google_sheets_connector import GoogleSheetsConnector
+from google_calendar_connector import GoogleCalendarConnector
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -151,7 +156,33 @@ def analytics():
 @login_required
 def settings():
     """Settings page"""
-    return render_template('settings.html')
+    # Check Google authentication status
+    google_connected = bool(session.get('google_credentials'))
+
+    # Get Google services status
+    drive_status = 'Connected' if google_connected else 'Disconnected'
+    sheets_status = 'Connected' if google_connected else 'Disconnected'
+    calendar_status = 'Connected' if google_connected else 'Disconnected'
+
+    return render_template('settings.html',
+                         google_connected=google_connected,
+                         drive_status=drive_status,
+                         sheets_status=sheets_status,
+                         calendar_status=calendar_status)
+
+@app.route('/google/login')
+@login_required
+def google_login():
+    """Redirect to Google OAuth2 login"""
+    return redirect('http://localhost:5006/google/login')
+
+@app.route('/google/callback')
+@login_required
+def google_callback():
+    """Handle Google OAuth2 callback"""
+    # This would be handled by the google_auth.py server
+    # For this example, we'll just redirect to settings
+    return redirect(url_for('settings'))
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -407,6 +438,109 @@ def api_upload():
         'filename': file.filename,
         'message': 'File uploaded successfully'
     })
+
+@app.route('/export_to_sheets')
+@login_required
+def export_to_sheets():
+    """Export issues to Google Sheets"""
+    credentials = get_google_credentials()
+    if not credentials:
+        return redirect(url_for('google_login'))
+
+    # Mock issues data
+    ISSUES = [
+        {
+            'id': 1,
+            'title': 'Design pipeline architecture',
+            'status': 'Done',
+            'priority': 'High',
+            'assignee': 'Alice',
+            'created_at': '2023-01-01',
+            'updated_at': '2023-01-10'
+        },
+        {
+            'id': 2,
+            'title': 'Implement base pipeline',
+            'status': 'In Progress',
+            'priority': 'High',
+            'assignee': 'Bob',
+            'created_at': '2023-01-02',
+            'updated_at': '2023-01-05'
+        },
+        {
+            'id': 3,
+            'title': 'Create IMP agents',
+            'status': 'Backlog',
+            'priority': 'Medium',
+            'assignee': 'Unassigned',
+            'created_at': '2023-01-03',
+            'updated_at': '2023-01-03'
+        }
+    ]
+
+    # Export issues to Google Sheets
+    sheets = GoogleSheetsConnector(credentials)
+    spreadsheet = sheets.create_spreadsheet('Issue Export')
+
+    if spreadsheet:
+        # Prepare data
+        headers = ['ID', 'Title', 'Status', 'Priority', 'Assignee', 'Created At', 'Updated At']
+        data = [headers]
+        for issue in ISSUES:
+            data.append([
+                issue['id'],
+                issue['title'],
+                issue['status'],
+                issue['priority'],
+                issue['assignee'],
+                issue['created_at'],
+                issue['updated_at']
+            ])
+
+        # Write data
+        sheets.write_data(spreadsheet['spreadsheetId'], 'Issues', data)
+
+        return redirect(spreadsheet['spreadsheetUrl'])
+    else:
+        return "Failed to create spreadsheet", 500
+
+@app.route('/schedule_review/<int:issue_id>')
+@login_required
+def schedule_review(issue_id):
+    """Schedule an issue review meeting"""
+    credentials = get_google_credentials()
+    if not credentials:
+        return redirect(url_for('google_login'))
+
+    # Mock issue data
+    ISSUES = {
+        1: {'id': 1, 'title': 'Design pipeline architecture'},
+        2: {'id': 2, 'title': 'Implement base pipeline'},
+        3: {'id': 3, 'title': 'Create IMP agents'}
+    }
+
+    issue = ISSUES.get(issue_id)
+    if not issue:
+        return "Issue not found", 404
+
+    # Schedule a meeting
+    calendar = GoogleCalendarConnector(credentials)
+    start_time = datetime.datetime.utcnow() + datetime.timedelta(hours=1)
+    end_time = start_time + datetime.timedelta(minutes=30)
+
+    event = calendar.create_event(
+        'primary',
+        f"Issue Review: {issue['title']}",
+        f"Review and discuss issue #{issue['id']}",
+        start_time,
+        end_time,
+        ['team@example.com']
+    )
+
+    if event:
+        return redirect(event['htmlLink'])
+    else:
+        return "Failed to create event", 500
 
 # Create database tables
 with app.app_context():
