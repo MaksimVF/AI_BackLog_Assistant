@@ -16,12 +16,75 @@ from flask_login import LoginManager, UserMixin, login_user, login_required, log
 from flask_migrate import Migrate
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
+from authlib.integrations.flask_client import OAuth
 
 # Initialize Flask app
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'your-secret-key-here')
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///site.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# OAuth Configuration
+app.config['GITHUB_CLIENT_ID'] = os.getenv('GITHUB_CLIENT_ID')
+app.config['GITHUB_CLIENT_SECRET'] = os.getenv('GITHUB_CLIENT_SECRET')
+app.config['GITLAB_CLIENT_ID'] = os.getenv('GITLAB_CLIENT_ID')
+app.config['GITLAB_CLIENT_SECRET'] = os.getenv('GITLAB_CLIENT_SECRET')
+app.config['BITBUCKET_CLIENT_ID'] = os.getenv('BITBUCKET_CLIENT_ID')
+app.config['BITBUCKET_CLIENT_SECRET'] = os.getenv('BITBUCKET_CLIENT_SECRET')
+app.config['GOOGLE_CLIENT_ID'] = os.getenv('GOOGLE_CLIENT_ID')
+app.config['GOOGLE_CLIENT_SECRET'] = os.getenv('GOOGLE_CLIENT_SECRET')
+
+# Initialize OAuth
+oauth = OAuth(app)
+
+# Register OAuth providers
+github = oauth.register(
+    name='github',
+    client_id=app.config['GITHUB_CLIENT_ID'],
+    client_secret=app.config['GITHUB_CLIENT_SECRET'],
+    authorize_url='https://github.com/login/oauth/authorize',
+    authorize_params=None,
+    access_token_url='https://github.com/login/oauth/access_token',
+    access_token_params=None,
+    api_base_url='https://api.github.com/',
+    client_kwargs={'scope': 'user:email'},
+)
+
+gitlab = oauth.register(
+    name='gitlab',
+    client_id=app.config['GITLAB_CLIENT_ID'],
+    client_secret=app.config['GITLAB_CLIENT_SECRET'],
+    authorize_url='https://gitlab.com/oauth/authorize',
+    authorize_params=None,
+    access_token_url='https://gitlab.com/oauth/token',
+    access_token_params=None,
+    api_base_url='https://gitlab.com/api/v4/',
+    client_kwargs={'scope': 'read_user'},
+)
+
+bitbucket = oauth.register(
+    name='bitbucket',
+    client_id=app.config['BITBUCKET_CLIENT_ID'],
+    client_secret=app.config['BITBUCKET_CLIENT_SECRET'],
+    authorize_url='https://bitbucket.org/site/oauth2/authorize',
+    authorize_params=None,
+    access_token_url='https://bitbucket.org/site/oauth2/access_token',
+    access_token_params=None,
+    api_base_url='https://api.bitbucket.org/2.0/',
+    client_kwargs={'scope': 'account'},
+)
+
+google = oauth.register(
+    name='google',
+    client_id=app.config['GOOGLE_CLIENT_ID'],
+    client_secret=app.config['GOOGLE_CLIENT_SECRET'],
+    authorize_url='https://accounts.google.com/o/oauth2/auth',
+    authorize_params=None,
+    access_token_url='https://accounts.google.com/o/oauth2/token',
+    access_token_params=None,
+    api_base_url='https://www.googleapis.com/oauth2/v1/',
+    client_kwargs={'scope': 'openid profile email'},
+)
 
 # Initialize database
 db = SQLAlchemy(app)
@@ -58,8 +121,14 @@ class User(db.Model, UserMixin):
     id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     username = db.Column(db.String(20), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
-    password_hash = db.Column(db.String(128), nullable=False)
+    password_hash = db.Column(db.String(128), nullable=True)  # Nullable for OAuth users
+
     telegram_id = db.Column(db.String(64), unique=True, nullable=True)
+    github_id = db.Column(db.String(64), unique=True, nullable=True)
+    gitlab_id = db.Column(db.String(64), unique=True, nullable=True)
+    bitbucket_id = db.Column(db.String(64), unique=True, nullable=True)
+    google_id = db.Column(db.String(64), unique=True, nullable=True)
+
     is_active = db.Column(db.Boolean, nullable=False, default=True)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
@@ -411,6 +480,162 @@ def api_upload():
 # Create database tables
 with app.app_context():
     db.create_all()
+
+# OAuth Authentication Routes
+@app.route('/auth/github')
+def github_login():
+    """GitHub login"""
+    redirect_uri = url_for('github_auth', _external=True)
+    return github.authorize_redirect(redirect_uri)
+
+@app.route('/auth/github/callback')
+def github_auth():
+    """GitHub auth callback"""
+    token = github.authorize_access_token()
+    resp = github.get('user')
+    user_data = resp.json()
+
+    # Get email (GitHub requires separate API call)
+    emails_resp = github.get('user/emails')
+    emails = emails_resp.json()
+    email = emails[0]['email'] if emails else f"{user_data['id']}@github.user"
+
+    # Find or create user
+    user = User.query.filter_by(github_id=str(user_data['id'])).first()
+    if not user:
+        user = User.query.filter_by(email=email).first()
+
+    if not user:
+        # Create new user
+        user = User(
+            username=user_data['login'],
+            email=email,
+            github_id=str(user_data['id'])
+        )
+        db.session.add(user)
+        db.session.commit()
+    else:
+        # Update existing user
+        user.github_id = str(user_data['id'])
+        user.username = user_data['login']
+        db.session.commit()
+
+    login_user(user)
+    return redirect(url_for('index'))
+
+@app.route('/auth/gitlab')
+def gitlab_login():
+    """GitLab login"""
+    redirect_uri = url_for('gitlab_auth', _external=True)
+    return gitlab.authorize_redirect(redirect_uri)
+
+@app.route('/auth/gitlab/callback')
+def gitlab_auth():
+    """GitLab auth callback"""
+    token = gitlab.authorize_access_token()
+    resp = gitlab.get('user')
+    user_data = resp.json()
+
+    email = user_data.get('email') or f"{user_data['id']}@gitlab.user"
+
+    # Find or create user
+    user = User.query.filter_by(gitlab_id=str(user_data['id'])).first()
+    if not user:
+        user = User.query.filter_by(email=email).first()
+
+    if not user:
+        # Create new user
+        user = User(
+            username=user_data['username'],
+            email=email,
+            gitlab_id=str(user_data['id'])
+        )
+        db.session.add(user)
+        db.session.commit()
+    else:
+        # Update existing user
+        user.gitlab_id = str(user_data['id'])
+        user.username = user_data['username']
+        db.session.commit()
+
+    login_user(user)
+    return redirect(url_for('index'))
+
+@app.route('/auth/bitbucket')
+def bitbucket_login():
+    """Bitbucket login"""
+    redirect_uri = url_for('bitbucket_auth', _external=True)
+    return bitbucket.authorize_redirect(redirect_uri)
+
+@app.route('/auth/bitbucket/callback')
+def bitbucket_auth():
+    """Bitbucket auth callback"""
+    token = bitbucket.authorize_access_token()
+    resp = bitbucket.get('user')
+    user_data = resp.json()
+
+    email = user_data.get('email') or f"{user_data['uuid']}@bitbucket.user"
+
+    # Find or create user
+    user = User.query.filter_by(bitbucket_id=user_data['uuid']).first()
+    if not user:
+        user = User.query.filter_by(email=email).first()
+
+    if not user:
+        # Create new user
+        user = User(
+            username=user_data['username'],
+            email=email,
+            bitbucket_id=user_data['uuid']
+        )
+        db.session.add(user)
+        db.session.commit()
+    else:
+        # Update existing user
+        user.bitbucket_id = user_data['uuid']
+        user.username = user_data['username']
+        db.session.commit()
+
+    login_user(user)
+    return redirect(url_for('index'))
+
+@app.route('/auth/google')
+def google_login():
+    """Google login"""
+    redirect_uri = url_for('google_auth', _external=True)
+    return google.authorize_redirect(redirect_uri)
+
+@app.route('/auth/google/callback')
+def google_auth():
+    """Google auth callback"""
+    token = google.authorize_access_token()
+    resp = google.get('userinfo')
+    user_data = resp.json()
+
+    email = user_data['email']
+
+    # Find or create user
+    user = User.query.filter_by(google_id=user_data['id']).first()
+    if not user:
+        user = User.query.filter_by(email=email).first()
+
+    if not user:
+        # Create new user
+        user = User(
+            username=user_data['name'].replace(' ', '_'),
+            email=email,
+            google_id=user_data['id']
+        )
+        db.session.add(user)
+        db.session.commit()
+    else:
+        # Update existing user
+        user.google_id = user_data['id']
+        user.username = user_data['name'].replace(' ', '_')
+        db.session.commit()
+
+    login_user(user)
+    return redirect(url_for('index'))
 
 if __name__ == '__main__':
     # Create uploads directory

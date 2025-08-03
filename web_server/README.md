@@ -66,6 +66,16 @@ This Flask-based web server provides the backend for the AI Backlog Assistant we
    ```bash
    export SECRET_KEY='your-secret-key-here'
    export DATABASE_URL='postgresql://username:password@localhost/dbname'  # or use SQLite
+
+   # OAuth Configuration (optional)
+   export GITHUB_CLIENT_ID='your-github-client-id'
+   export GITHUB_CLIENT_SECRET='your-github-client-secret'
+   export GITLAB_CLIENT_ID='your-gitlab-client-id'
+   export GITLAB_CLIENT_SECRET='your-gitlab-client-secret'
+   export BITBUCKET_CLIENT_ID='your-bitbucket-client-id'
+   export BITBUCKET_CLIENT_SECRET='your-bitbucket-client-secret'
+   export GOOGLE_CLIENT_ID='your-google-client-id'
+   export GOOGLE_CLIENT_SECRET='your-google-client-secret'
    ```
 
 3. Initialize the database:
