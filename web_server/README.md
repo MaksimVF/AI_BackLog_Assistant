@@ -9,10 +9,11 @@
 
 This Flask-based web server provides the backend for the AI Backlog Assistant web interface. It includes:
 
-- User authentication system
+- User authentication system with group/organization support
 - API endpoints for document upload and processing
 - Integration with the pipeline system
 - Web interface for managing projects and analytics
+- Organization-based access control
 
 ## Features
 
@@ -21,11 +22,21 @@ This Flask-based web server provides the backend for the AI Backlog Assistant we
 - User registration and login
 - Session management
 - Protected routes for authenticated users
+- Organization-based access control
+- Role-based permissions (owner, admin, member, viewer)
+
+### Organization Management
+
+- Create and manage organizations
+- Invite/remove users from organizations
+- Switch between personal and organization contexts
+- Role-based access within organizations
 
 ### API Endpoints
 
 - `/api/status` - System status
 - `/api/upload` - Document upload for processing
+- Organization management endpoints
 - Additional endpoints for pipeline integration
 
 ### Web Interface
@@ -34,6 +45,7 @@ This Flask-based web server provides the backend for the AI Backlog Assistant we
 - Project management pages
 - Analytics and visualization
 - User settings and configuration
+- Organization management interface
 
 ## Setup
 
@@ -41,6 +53,7 @@ This Flask-based web server provides the backend for the AI Backlog Assistant we
 
 - Python 3.7+
 - Flask and related dependencies (see requirements.txt)
+- PostgreSQL (recommended) or SQLite
 
 ### Installation
 
@@ -52,7 +65,14 @@ This Flask-based web server provides the backend for the AI Backlog Assistant we
 2. Set environment variables:
    ```bash
    export SECRET_KEY='your-secret-key-here'
-   export DATABASE_URI='sqlite:///site.db'
+   export DATABASE_URL='postgresql://username:password@localhost/dbname'  # or use SQLite
+   ```
+
+3. Initialize the database:
+   ```bash
+   flask db init
+   flask db migrate
+   flask db upgrade
    ```
 
 ### Running the Server
@@ -72,12 +92,22 @@ The web server is designed to integrate with the AI Backlog Assistant pipeline s
 2. It's processed through the pipeline system
 3. Results are returned to the user interface
 
+## Organization Model
+
+The system supports both personal and organizational contexts:
+
+- **Personal access**: Users can work individually
+- **Organizational access**: Users can collaborate within organizations
+- **Role-based permissions**: Different roles (owner, admin, member, viewer) have different access levels
+- **Context switching**: Users can switch between personal and organizational contexts
+
 ## Future Enhancements
 
 - Add more detailed analytics endpoints
-- Implement role-based access control
+- Implement API key management
 - Add document management features
 - Enhance error handling and logging
+- Add Telegram bot integration
 
 ## License
 
