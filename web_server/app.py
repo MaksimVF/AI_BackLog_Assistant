@@ -109,9 +109,16 @@ telegram = oauth.register(
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 
+# Import billing models to register them with SQLAlchemy
+from .billing_models import TariffPlan, OrganizationBalance, UsageLog, FeatureConfig
+
 # Initialize login manager
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
+
+# Register billing blueprint
+from .billing_routes import billing_bp
+app.register_blueprint(billing_bp)
 
 # Initialize password hasher
 ph = PasswordHasher()
