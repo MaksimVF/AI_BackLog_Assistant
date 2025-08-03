@@ -1,0 +1,102 @@
+
+
+
+
+
+
+
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Settings - Integrations</h1>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5>Google Integrations</h5>
+            </div>
+            <div class="card-body">
+                {% if not google_connected %}
+                <div class="alert alert-info">
+                    Google services are not connected.
+                </div>
+                <a href="{{ url_for('google_login') }}" class="btn btn-google">
+                    <i class="bi bi-google"></i> Connect Google Account
+                </a>
+                {% else %}
+                <div class="alert alert-success">
+                    Google services are connected.
+                </div>
+                {% endif %}
+
+                <div class="mt-4">
+                    <h6>Google Drive</h6>
+                    <div class="integration-status">
+                        Status: {{ drive_status }}
+                    </div>
+                </div>
+
+                <div class="mt-3">
+                    <h6>Google Sheets</h6>
+                    <div class="integration-status">
+                        Status: {{ sheets_status }}
+                    </div>
+                </div>
+
+                <div class="mt-3">
+                    <h6>Google Calendar</h6>
+                    <div class="integration-status">
+                        Status: {{ calendar_status }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5>Version Control Integrations</h5>
+            </div>
+            <div class="card-body">
+                <div class="mt-3">
+                    <h6>GitHub</h6>
+                    <div class="integration-status">
+                        Status: Connected
+                    </div>
+                    <div class="mt-2">
+                        <small>Webhook URL: <code>https://your-app.com/github/webhook</code></small>
+                    </div>
+                </div>
+
+                <div class="mt-3">
+                    <h6>GitLab</h6>
+                    <div class="integration-status">
+                        Status: Connected
+                    </div>
+                    <div class="mt-2">
+                        <small>Webhook URL: <code>https://your-app.com/gitlab/webhook</code></small>
+                    </div>
+                </div>
+
+                <div class="mt-3">
+                    <h6>Bitbucket</h6>
+                    <div class="integration-status">
+                        Status: Connected
+                    </div>
+                    <div class="mt-2">
+                        <small>Webhook URL: <code>https://your-app.com/bitbucket/webhook</code></small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+
+
+
+
+
