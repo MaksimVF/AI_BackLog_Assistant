@@ -1,0 +1,103 @@
+
+
+
+
+
+
+
+
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Issue #{{ issue.id }}: {{ issue.title }}</h1>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5>Issue Details</h5>
+            </div>
+            <div class="card-body">
+                <dl class="row">
+                    <dt class="col-sm-3">Status</dt>
+                    <dd class="col-sm-9">{{ issue.status }}</dd>
+
+                    <dt class="col-sm-3">Priority</dt>
+                    <dd class="col-sm-9">{{ issue.priority }}</dd>
+
+                    <dt class="col-sm-3">Assignee</dt>
+                    <dd class="col-sm-9">{{ issue.assignee }}</dd>
+
+                    <dt class="col-sm-3">Created</dt>
+                    <dd class="col-sm-9">{{ issue.created_at }}</dd>
+
+                    <dt class="col-sm-3">Updated</dt>
+                    <dd class="col-sm-9">{{ issue.updated_at }}</dd>
+                </dl>
+            </div>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5>Actions</h5>
+            </div>
+            <div class="card-body">
+                <a href="{{ url_for('schedule_review', issue_id=issue.id) }}" class="btn btn-primary">
+                    <i class="bi bi-calendar"></i> Schedule Review Meeting
+                </a>
+
+                {% if google_connected %}
+                <a href="#" class="btn btn-secondary">
+                    <i class="bi bi-file-earmark"></i> Attach Google Document
+                </a>
+                {% else %}
+                <a href="{{ url_for('google_login') }}" class="btn btn-secondary">
+                    <i class="bi bi-google"></i> Connect Google to Attach Documents
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5>Related Documents</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item">
+                        <i class="bi bi-file-earmark-text"></i> Design Document
+                        <a href="#" class="float-end"><i class="bi bi-box-arrow-up-right"></i></a>
+                    </li>
+                    <li class="list-group-item">
+                        <i class="bi bi-file-earmark-spreadsheet"></i> Requirements
+                        <a href="#" class="float-end"><i class="bi bi-box-arrow-up-right"></i></a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5>Upcoming Events</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item">
+                        <i class="bi bi-calendar-event"></i> Issue Review Meeting
+                        <br><small>Jan 15, 2023 at 2:00 PM</small>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+
+
+
+
+
+
