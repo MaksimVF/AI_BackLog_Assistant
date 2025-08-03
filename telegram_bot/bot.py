@@ -8,7 +8,7 @@ Telegram Bot for AI Backlog Assistant
 import logging
 import os
 from telegram import Update, Bot
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
+from telegram.ext import Application, CommandHandler, MessageHandler, filters, CallbackContext
 
 # Enable logging
 logging.basicConfig(
@@ -72,7 +72,8 @@ def handle_document(update: Update, context: CallbackContext) -> None:
 
         # Download the file
         file = context.bot.get_file(file_id)
-        file.download(f'downloads/{file_name}')
+        file_path = f'downloads/{file_name}'
+        file.download(file_path)
 
         update.message.reply_text(
             f'Document received:\n'
@@ -81,20 +82,42 @@ def handle_document(update: Update, context: CallbackContext) -> None:
             f'⏳ Processing...'
         )
 
-        # Here you would integrate with your pipeline system
-        # For now, we'll just send a mock response
-        context.job_queue.run_once(
-            lambda ctx: ctx.bot.send_message(
-                chat_id=update.effective_chat.id,
-                text='✅ Analysis complete!\n\n'
-                     'Recommendations:\n'
-                     '1. Prioritize task #123\n'
-                     '2. Review bottleneck in module X\n'
-                     '3. Consider resource reallocation'
-            ),
-            when=5,  # Send response after 5 seconds
-            context=update.effective_chat.id
-        )
+        # Integrate with the pipeline system
+        try:
+            from pipelines.main_pipeline_coordinator import MainPipelineCoordinator
+
+            # Create a pipeline coordinator
+            coordinator = MainPipelineCoordinator()
+
+            # Process the document through the pipeline
+            result = coordinator.process_end_to_end(
+                document_id=f"telegram_{file_id}",
+                raw_content=file_path,
+                metadata={
+                    'source': 'telegram',
+                    'file_name': file_name,
+                    'file_size': file_size,
+                    'user_id': update.effective_user.id,
+                    'chat_id': update.effective_chat.id
+                }
+            )
+
+            # Prepare response based on pipeline results
+            response_text = _format_pipeline_results(result)
+
+            # Send the response
+            context.job_queue.run_once(
+                lambda ctx: ctx.bot.send_message(
+                    chat_id=update.effective_chat.id,
+                    text=response_text
+                ),
+                when=2,  # Send response after processing
+                context=update.effective_chat.id
+            )
+
+        except Exception as e:
+            error_msg = f"❌ Error processing document: {str(e)}"
+            update.message.reply_text(error_msg)
     else:
         update.message.reply_text('Please send a valid document file.')
 
@@ -115,42 +138,72 @@ def notifications_enable(update: Update, context: CallbackContext) -> None:
     """Enable notifications."""
     update.message.reply_text('✅ Notifications enabled')
 
+def _format_pipeline_results(result: dict) -> str:
+    """Format pipeline results for Telegram response."""
+    try:
+        # Extract key information from pipeline results
+        modality = result.get('modality', 'unknown')
+        intent = result.get('intent', 'unknown')
+        entities = result.get('entities', {})
+        recommendations = result.get('recommendations', [])
+
+        # Build response text
+        response = "✅ Analysis complete!\n\n"
+        response += f"📋 **Document Analysis**\n"
+        response += f"🔍 Modality: {modality}\n"
+        response += f"🎯 Intent: {intent}\n"
+
+        if entities:
+            response += "\n🏷️ **Key Entities**\n"
+            for entity_type, entity_values in entities.items():
+                if isinstance(entity_values, list):
+                    response += f"{entity_type}: {', '.join(entity_values[:3])}\n"
+                else:
+                    response += f"{entity_type}: {entity_values}\n"
+
+        if recommendations:
+            response += "\n💡 **Recommendations**\n"
+            for i, rec in enumerate(recommendations, 1):
+                response += f"{i}. {rec}\n"
+        else:
+            response += "\n💡 **Recommendations**\n"
+            response += "No specific recommendations generated."
+
+        return response
+
+    except Exception as e:
+        return f"❌ Error formatting results: {str(e)}"
+
 def error(update: Update, context: CallbackContext) -> None:
     """Log errors caused by updates."""
     logger.warning('Update "%s" caused error "%s"', update, context.error)
 
 def main() -> None:
     """Start the bot."""
-    # Create the Updater and pass it your bot's token.
-    updater = Updater(TELEGRAM_TOKEN)
-
-    # Get the dispatcher to register handlers
-    dispatcher = updater.dispatcher
+    # Create the Application and pass it your bot's token.
+    app = Application.builder().token(TELEGRAM_TOKEN).build()
 
     # Register command handlers
-    dispatcher.add_handler(CommandHandler("start", start))
-    dispatcher.add_handler(CommandHandler("help", help_command))
-    dispatcher.add_handler(CommandHandler("status", status))
-    dispatcher.add_handler(CommandHandler("upload", upload))
-    dispatcher.add_handler(CommandHandler("notifications", notifications))
-    dispatcher.add_handler(CommandHandler("notifications_disable", notifications_disable))
-    dispatcher.add_handler(CommandHandler("notifications_enable", notifications_enable))
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(CommandHandler("help", help_command))
+    app.add_handler(CommandHandler("status", status))
+    app.add_handler(CommandHandler("upload", upload))
+    app.add_handler(CommandHandler("notifications", notifications))
+    app.add_handler(CommandHandler("notifications_disable", notifications_disable))
+    app.add_handler(CommandHandler("notifications_enable", notifications_enable))
 
     # Register message handlers
-    dispatcher.add_handler(MessageHandler(Filters.document, handle_document))
+    app.add_handler(MessageHandler(filters.DOCUMENT, handle_document))
 
     # Register error handler
-    dispatcher.add_error_handler(error)
+    app.add_error_handler(error)
 
     # Create downloads directory if it doesn't exist
     os.makedirs('downloads', exist_ok=True)
 
     # Start the Bot
     logger.info("Starting Telegram Bot...")
-    updater.start_polling()
-
-    # Run the bot until you press Ctrl-C or the process receives SIGINT, SIGTERM or SIGABRT
-    updater.idle()
+    app.run_polling()
 
 if __name__ == '__main__':
     main()

@@ -23,6 +23,7 @@ from agents.video_analyzer_agent import video_analyzer_agent
 from agents.analyzers.entity_extractor import EntityExtractor
 from agents.analyzers.intent_identifier import IntentIdentifier
 from agents.analyzers.metadata_builder import MetadataBuilder
+from tools.document_processor import extract_document_content
 from .base_pipeline import BasePipeline, PipelineConfig
 
 class IPPInputSchema(BaseModel):
@@ -48,7 +49,7 @@ class IPPOutputSchema(BaseModel):
 
     @validator('modality')
     def valid_modality(cls, v):
-        valid_modalities = ['text', 'audio', 'video', 'image']
+        valid_modalities = ['text', 'audio', 'video', 'image', 'document']
         if v not in valid_modalities:
             raise ValueError(f"Invalid modality: {v}. Must be one of {valid_modalities}")
         return v
@@ -113,6 +114,8 @@ class InputProcessingPipeline(BasePipeline):
             processed_text = self._process_audio(raw_content)
         elif modality == 'video':
             processed_text = self._process_video(raw_content)
+        elif modality == 'document':
+            processed_text = self._process_document(raw_content)
         else:
             processed_text = str(raw_content)  # Fallback for unknown modalities
 
@@ -149,10 +152,13 @@ class InputProcessingPipeline(BasePipeline):
         # This would be implemented by calling the modality detector agent
         # For now, return a placeholder based on content type
         if isinstance(content, str):
+            # Check if the content is a file path
+            if content.endswith('.pdf') or content.endswith('.docx') or content.endswith('.txt') or content.endswith('.csv'):
+                return 'document'
             return 'text'
         elif hasattr(content, 'read'):  # File-like object
             # In a real implementation, we'd analyze the file content
-            return 'text'  # Default for simplicity
+            return 'document'  # Assume it's a document file
         else:
             return 'text'  # Default fallback
 
@@ -173,4 +179,13 @@ class InputProcessingPipeline(BasePipeline):
         # This would call the video analyzer agent
         # For now, return a placeholder
         return "Extracted text from video"
+
+    def _process_document(self, document_path: str) -> str:
+        """Process document file content"""
+        # Extract text from the document using the document processor
+        try:
+            return extract_document_content(document_path)
+        except Exception as e:
+            self._log(f"Error processing document {document_path}: {e}", "error")
+            return f"Error processing document: {e}"
 
