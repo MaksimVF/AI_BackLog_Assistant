@@ -9,13 +9,14 @@ from crewai import Agent, Task
 from memory.weaviate_client import WeaviateMemory
 from .analyzers.context_classifier import ContextClassifier, ContextAnalysis
 from .analyzers.intent_identifier import IntentIdentifier, IntentAnalysis
-
 from .analyzers.pattern_matcher import PatternMatcher, PatternAnalysis
 from .analyzers.sentiment_analyzer import SentimentAnalyzer, SentimentAnalysis
 from .analyzers.temporal_analyzer import TemporalAnalyzer, TemporalPattern
 from .analyzers.topic_modeler import TopicModeler, TopicAnalysis
-
+from .analyzers.text_cleaner import TextCleaner
+from .analyzers.entity_extractor import EntityExtractor
 from .router import Router, RoutingDecision
+from .reflection_agent.contextual_router import route_text, get_all_routes as get_contextual_routes
 import json
 import logging
 
@@ -73,6 +74,10 @@ class ReflectionAgent(Agent):
         object.__setattr__(self, 'temporal_analyzer', TemporalAnalyzer(memory=self.memory))
         object.__setattr__(self, 'topic_modeler', TopicModeler())
         object.__setattr__(self, 'user_id', user_id)
+
+        # Add pipeline aggregator components
+        object.__setattr__(self, 'text_cleaner', TextCleaner())
+        object.__setattr__(self, 'entity_extractor', EntityExtractor())
 
         # Fetch user history if available
         if self.user_id:
@@ -338,6 +343,83 @@ class ReflectionAgent(Agent):
 
         # Convert to JSON string
         return result.json()
+
+    def process_text_with_pipeline(self, text: str) -> Dict[str, Any]:
+        """
+        Process text through the pipeline aggregator components.
+
+        Args:
+            text: Raw input text
+
+        Returns:
+            Dictionary with processing results including cleaned text, entities, and routing
+        """
+        # Step 1: Clean the text
+        cleaning_result = self.text_cleaner.clean(text)
+        cleaned_text = cleaning_result.get("cleaned_text", text)
+
+        # Step 2: Extract entities
+        entities = self.entity_extractor.extract(cleaned_text)
+
+        # Step 3: Route to appropriate sub-agent using contextual router
+        agent_name = route_text(cleaned_text)
+
+        # Step 4: Get contextual routing information
+        contextual_route = self._get_contextual_route_info(agent_name)
+
+        return {
+            "original_text": text,
+            "cleaned_text": cleaned_text,
+            "entities": entities,
+            "agent_name": agent_name,
+            "route_description": contextual_route.get("description", "No description"),
+            "available_routes": self._get_available_contextual_routes()
+        }
+
+    def _get_contextual_route_info(self, route_name: str) -> Dict[str, Any]:
+        """
+        Get information about a specific contextual route.
+
+        Args:
+            route_name: Name of the route
+
+        Returns:
+            Dictionary with route information
+        """
+        description = None
+        try:
+            description = get_route_description(route_name)
+        except:
+            # Fallback to simple lookup
+            for route in get_contextual_routes():
+                if route.name == route_name:
+                    description = route.description
+                    break
+
+        return {
+            "name": route_name,
+            "description": description or "No description available"
+        }
+
+    def _get_available_contextual_routes(self) -> List[Dict[str, str]]:
+        """
+        Get list of available contextual routes.
+
+        Returns:
+            List of route information dictionaries
+        """
+        routes = []
+        try:
+            route_names = get_contextual_routes()
+            for route_name in route_names:
+                routes.append({
+                    "name": route_name,
+                    "description": self._get_contextual_route_info(route_name)["description"]
+                })
+        except Exception as e:
+            logger.error(f"Error getting contextual routes: {e}")
+
+        return routes
 
 
 
