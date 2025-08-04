@@ -6,8 +6,18 @@ class WeaviateMemory:
     """Weaviate vector store client for memory management"""
 
     def __init__(self, url: str = "http://localhost:8080", scheme: str = "http"):
-        self.client = weaviate.Client(url=url)
-        self._setup_schema()
+        try:
+            # Try new Weaviate client API (v4+)
+            self.client = weaviate.connect(url=url)
+            self._setup_schema()
+        except (ImportError, AttributeError):
+            try:
+                # Try old Weaviate client API (v3)
+                self.client = weaviate.Client(url=url)
+                self._setup_schema()
+            except Exception as e:
+                print(f"Warning: Could not connect to Weaviate: {e}")
+                self.client = None
 
     def _setup_schema(self):
         """Set up the schema for our multi-agent system"""
