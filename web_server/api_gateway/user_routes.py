@@ -7,12 +7,13 @@
 User Management Routes for API Gateway
 """
 
-from flask import request, jsonify
+import uuid
+from flask import request, jsonify, current_app
 from . import api_gateway_bp
-from .auth_middleware import token_required
-
+from .auth_middleware import token_required, generate_token
 from ..app import db
-from ..models import User
+from ..models import User, Organization, OrganizationMember, Document, DocumentAnalysis
+from datetime import datetime
 
 
 @api_gateway_bp.route('/api/v1/users', methods=['GET'])
@@ -120,26 +121,114 @@ def update_user(current_user, current_email, current_role, user_id):
 
     data = request.get_json()
 
-    if 'username' in data:
-        user.username = data['username']
+    try:
+        if 'username' in data:
+            # Check if username is already taken
+            existing_user = User.query.filter(User.username == data['username'], User.id != user_id).first()
+            if existing_user:
+                return jsonify({'error': 'Username already taken'}), 400
+            user.username = data['username']
 
-    if 'email' in data:
-        user.email = data['email']
+        if 'email' in data:
+            # Check if email is already taken
+            existing_email = User.query.filter(User.email == data['email'], User.id != user_id).first()
+            if existing_email:
+                return jsonify({'error': 'Email already taken'}), 400
+            user.email = data['email']
 
-    if 'password' in data:
-        user.set_password(data['password'])
+        if 'password' in data:
+            user.set_password(data['password'])
 
-    if 'is_active' in data and current_role == 'admin':
-        user.is_active = data['is_active']
+        if 'is_active' in data and current_role == 'admin':
+            user.is_active = data['is_active']
 
-    db.session.commit()
+        db.session.commit()
+
+        return jsonify({
+            'status': 'success',
+            'user_id': user.id,
+            'username': user.username,
+            'email': user.email,
+            'is_active': user.is_active
+        })
+
+    except Exception as e:
+        current_app.logger.error(f"User update error: {str(e)}")
+        db.session.rollback()
+        return jsonify({'error': f'User update failed: {str(e)}'}), 500
+
+@api_gateway_bp.route('/api/v1/users/<user_id>/documents', methods=['GET'])
+@token_required
+def get_user_documents(current_user, current_email, current_role, user_id):
+    """
+    Get user's documents (admin or self access only)
+    """
+    if current_role != 'admin' and current_user != user_id:
+        return jsonify({'error': 'Access denied'}), 403
+
+    # Get documents with pagination
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 10, type=int)
+    status = request.args.get('status', None)
+
+    query = Document.query.filter_by(user_id=user_id)
+
+    if status:
+        query = query.filter(Document.status == status)
+
+    documents = query.paginate(page=page, per_page=per_page, error_out=False)
 
     return jsonify({
-        'status': 'success',
-        'user_id': user.id,
-        'username': user.username,
-        'email': user.email,
-        'is_active': user.is_active
+        'documents': [{
+            'id': doc.id,
+            'filename': doc.filename,
+            'file_type': doc.file_type,
+            'status': doc.status,
+            'created_at': doc.created_at.isoformat(),
+            'updated_at': doc.updated_at.isoformat() if doc.updated_at else None
+        } for doc in documents.items],
+        'total': documents.total,
+        'pages': documents.pages,
+        'current_page': documents.page
+    })
+
+@api_gateway_bp.route('/api/v1/users/<user_id>/analyses', methods=['GET'])
+@token_required
+def get_user_analyses(current_user, current_email, current_role, user_id):
+    """
+    Get user's analyses (admin or self access only)
+    """
+    if current_role != 'admin' and current_user != user_id:
+        return jsonify({'error': 'Access denied'}), 403
+
+    # Get analyses with pagination
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 10, type=int)
+    analysis_type = request.args.get('analysis_type', None)
+    status = request.args.get('status', None)
+
+    query = DocumentAnalysis.query.join(Document).filter(Document.user_id == user_id)
+
+    if analysis_type:
+        query = query.filter(DocumentAnalysis.analysis_type == analysis_type)
+
+    if status:
+        query = query.filter(DocumentAnalysis.status == status)
+
+    analyses = query.paginate(page=page, per_page=per_page, error_out=False)
+
+    return jsonify({
+        'analyses': [{
+            'id': analysis.id,
+            'document_id': analysis.document_id,
+            'analysis_type': analysis.analysis_type,
+            'status': analysis.status,
+            'created_at': analysis.created_at.isoformat(),
+            'updated_at': analysis.updated_at.isoformat() if analysis.updated_at else None
+        } for analysis in analyses.items],
+        'total': analyses.total,
+        'pages': analyses.pages,
+        'current_page': analyses.page
     })
 
 
