@@ -20,5 +20,8 @@ semantic-router[fastembed]
 sentence-transformers
 
 python-docx
+
 clickhouse-connect
+confluent-kafka
+
 
