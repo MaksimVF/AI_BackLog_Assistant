@@ -93,6 +93,44 @@ class ActiveContext(db.Model):
     user = db.relationship('User', backref=db.backref('active_context', lazy=True, uselist=False))
     organization = db.relationship('Organization')
 
+# Document model for storing uploaded and processed documents
+class Document(db.Model):
+    __tablename__ = 'documents'
+
+    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = db.Column(db.String(36), db.ForeignKey('users.id'), nullable=False)
+    organization_id = db.Column(db.String(36), db.ForeignKey('organizations.id'), nullable=True)
+    filename = db.Column(db.String(255), nullable=False)
+    file_type = db.Column(db.String(50), nullable=False)
+    status = db.Column(db.String(50), nullable=False, default='uploaded')  # uploaded, processing, processed, analyzed
+    extracted_text = db.Column(db.Text, nullable=True)
+    file_metadata = db.Column(db.JSON, nullable=True)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, nullable=True, onupdate=datetime.utcnow)
+
+    # Relationships
+    user = db.relationship('User', backref=db.backref('documents', lazy=True))
+    organization = db.relationship('Organization', backref=db.backref('documents', lazy=True))
+    analyses = db.relationship('DocumentAnalysis', backref='document', lazy=True)
+
+    def __repr__(self):
+        return f"Document('{self.filename}', '{self.status}')"
+
+# Document analysis model for storing analysis results
+class DocumentAnalysis(db.Model):
+    __tablename__ = 'document_analyses'
+
+    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    document_id = db.Column(db.String(36), db.ForeignKey('documents.id'), nullable=False)
+    analysis_type = db.Column(db.String(50), nullable=False)  # basic, sentiment, entity, etc.
+    status = db.Column(db.String(50), nullable=False, default='pending')  # pending, processing, completed, failed
+    results = db.Column(db.JSON, nullable=True)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, nullable=True, onupdate=datetime.utcnow)
+
+    def __repr__(self):
+        return f"DocumentAnalysis('{self.analysis_type}', '{self.status}')"
+
 
 
 
