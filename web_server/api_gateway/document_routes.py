@@ -8,18 +8,27 @@ Document Processing Routes for API Gateway
 
 import os
 import tempfile
+import json
 from flask import request, jsonify, current_app
 from . import api_gateway_bp
 from .auth_middleware import token_required
 from ..app import db
 from web_server.models import Document, DocumentAnalysis
 from datetime import datetime
+from agents.pipeline_coordinator_agent import PipelineCoordinatorAgent
+from agents.categorization.document_classifier_agent import DocumentClassifierAgent
+from agents.text_processor_agent import text_processor_agent
+
+
+# Initialize agents
+pipeline_coordinator = PipelineCoordinatorAgent()
+document_classifier = DocumentClassifierAgent()
 
 @api_gateway_bp.route('/api/v1/documents', methods=['GET', 'POST'])
 @token_required
 def handle_documents(current_user, current_email, current_role):
     """
-    Handle document operations
+    Handle document operations with real agent integration
     """
     if request.method == 'POST':
         # Upload and process a document
@@ -38,9 +47,26 @@ def handle_documents(current_user, current_email, current_role):
         file.save(temp_path)
 
         try:
-            # Process the document - for now use placeholder
-            extracted_text = "Extracted text from document"
-            metadata = {'pages': 5, 'format': document_type, 'size': '2.3MB'}
+            # Read file content (for now just read as text, in production use proper file handling)
+            with open(temp_path, 'r', encoding='utf-8', errors='ignore') as f:
+                file_content = f.read()
+
+            # Process the document using real agents
+            # 1. Classify document type
+            doc_type = document_classifier.classify(file_content)
+
+            # 2. Process through pipeline coordinator
+            pipeline_result = pipeline_coordinator.process("text", file_content)
+
+            # 3. Extract metadata from results
+            extracted_text = pipeline_result.get('cleaned_text', file_content[:1000])  # Limit text size
+            metadata = {
+                'document_type': doc_type,
+                'agent_used': pipeline_result.get('agent_name', 'general_analyzer'),
+                'analysis_summary': pipeline_result.get('reflection_results', {}).get('summary', {}).get('summary', 'No summary'),
+                'format': document_type,
+                'size': f'{len(file_content)} characters'
+            }
 
             # Create document record in database
             new_document = Document(
@@ -61,7 +87,8 @@ def handle_documents(current_user, current_email, current_role):
                 'status': 'success',
                 'message': 'Document uploaded and processed successfully',
                 'document_id': new_document.id,
-                'document_type': document_type,
+                'document_type': doc_type,
+                'analysis_summary': metadata.get('analysis_summary', ''),
                 'user_id': current_user
             })
 
@@ -82,7 +109,9 @@ def handle_documents(current_user, current_email, current_role):
                 'name': doc.filename,
                 'status': doc.status,
                 'uploaded_at': doc.created_at.isoformat() if doc.created_at else None,
-                'file_type': doc.file_type
+                'file_type': doc.file_type,
+                'document_type': doc.file_metadata.get('document_type', 'unknown') if doc.file_metadata else 'unknown',
+                'analysis_summary': doc.file_metadata.get('analysis_summary', '') if doc.file_metadata else ''
             } for doc in documents],
             'user_id': current_user
         })
@@ -113,7 +142,7 @@ def get_document(current_user, current_email, current_role, document_id):
 @token_required
 def analyze_document(current_user, current_email, current_role, document_id):
     """
-    Request analysis of a processed document
+    Request analysis of a processed document using real agents
     """
     document = Document.query.filter_by(id=document_id, user_id=current_user).first()
 
@@ -134,16 +163,48 @@ def analyze_document(current_user, current_email, current_role, document_id):
         db.session.add(analysis)
         db.session.commit()
 
+        # Perform actual analysis using pipeline coordinator
+        text_content = document.extracted_text or ""
+
+        if analysis_type == 'basic':
+            # Use pipeline coordinator for comprehensive analysis
+            pipeline_result = pipeline_coordinator.process_document(text_content)
+            results = {
+                'summary': pipeline_result.get('summary', {}).get('summary', 'No summary available'),
+                'sentiment': pipeline_result.get('sentiment', {}).get('sentiment', 'neutral'),
+                'entities': pipeline_result.get('entities', []),
+                'categories': pipeline_result.get('categories', [])
+            }
+        elif analysis_type == 'sentiment':
+            # Perform sentiment analysis
+            sentiment_result = pipeline_coordinator.document_reflector.analyze_sentiment(text_content)
+            results = {'sentiment': sentiment_result}
+        elif analysis_type == 'entity':
+            # Perform entity extraction
+            entity_result = pipeline_coordinator.document_reflector.extract_entities(text_content)
+            results = {'entities': entity_result}
+        else:  # summarization or other types
+            # Perform summarization
+            summary_result = pipeline_coordinator.document_reflector.generate_summary(text_content)
+            results = {'summary': summary_result}
+
+        # Update analysis record with results
+        analysis.status = 'completed'
+        analysis.results = results
+        analysis.updated_at = datetime.utcnow()
+
         # Update document status
         document.status = 'analyzed'
         document.updated_at = datetime.utcnow()
+
         db.session.commit()
 
         return jsonify({
-            'status': 'analysis_started',
+            'status': 'analysis_completed',
             'document_id': document.id,
             'analysis_id': analysis.id,
             'analysis_type': analysis_type,
+            'results': results,
             'user_id': current_user
         })
 

@@ -14,7 +14,7 @@ import uuid
 from datetime import datetime
 from typing import Dict, Any, Optional, Tuple
 from flask import current_app as app
-from .app import db
+from .extensions import db
 from .billing_models import TariffPlan, OrganizationBalance, UsageLog, FeatureConfig
 from sqlalchemy.exc import SQLAlchemyError
 

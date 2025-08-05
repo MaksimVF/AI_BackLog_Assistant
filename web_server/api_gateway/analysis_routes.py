@@ -5,18 +5,29 @@
 Analysis Routes for API Gateway
 """
 
+import json
 from flask import request, jsonify, current_app
 from . import api_gateway_bp
 from .auth_middleware import token_required
 from ..app import db
 from web_server.models import Document, DocumentAnalysis
 from datetime import datetime
+from agents.pipeline_coordinator_agent import PipelineCoordinatorAgent
+from agents.analyzers.sentiment_analyzer import SentimentAnalyzer
+from agents.analyzers.entity_extractor import EntityExtractor
+from agents.summary.summary_agent import SummaryAgent
+
+# Initialize agents
+pipeline_coordinator = PipelineCoordinatorAgent()
+sentiment_analyzer = SentimentAnalyzer()
+entity_extractor = EntityExtractor()
+summary_agent = SummaryAgent()
 
 @api_gateway_bp.route('/api/v1/analysis', methods=['POST'])
 @token_required
 def create_analysis(current_user, current_email, current_role):
     """
-    Create a new analysis request
+    Create a new analysis request using real agents
     """
     data = request.get_json()
 
@@ -38,21 +49,33 @@ def create_analysis(current_user, current_email, current_role):
         db.session.add(analysis)
         db.session.commit()
 
-        # For now, return placeholder results based on analysis type
+        # Perform actual analysis using real agents
         results = {}
         if analysis_type == 'sentiment':
-            results['sentiment'] = 'positive'
+            # Use real sentiment analyzer
+            sentiment_result = sentiment_analyzer.analyze(text)
+            results['sentiment'] = sentiment_result.get('sentiment', 'neutral')
+            results['confidence'] = sentiment_result.get('confidence', 0.7)
         elif analysis_type == 'entity':
-            results['entities'] = [{'name': 'Entity1', 'type': 'PERSON'}]
+            # Use real entity extractor
+            entities = entity_extractor.extract(text)
+            results['entities'] = [{'name': entity['text'], 'type': entity['type']} for entity in entities]
         elif analysis_type == 'summarization':
-            results['summary'] = 'This is a summary of the analyzed text'
+            # Use real summary agent
+            summary = summary_agent.generate_summary(text)
+            results['summary'] = summary
         elif analysis_type == 'categorization':
-            results['categories'] = ['category1', 'category2']
-        else:  # basic
+            # Use document classifier
+            category = document_classifier.classify(text)
+            results['categories'] = [category]
+        else:  # basic - comprehensive analysis
+            # Use pipeline coordinator for comprehensive analysis
+            pipeline_result = pipeline_coordinator.process_document(text)
             results = {
-                'sentiment': 'positive',
-                'entities': [{'name': 'Entity1', 'type': 'PERSON'}],
-                'summary': 'This is a summary of the analyzed text'
+                'sentiment': pipeline_result.get('sentiment', {}).get('sentiment', 'neutral'),
+                'entities': pipeline_result.get('entities', []),
+                'summary': pipeline_result.get('summary', {}).get('summary', 'No summary available'),
+                'categories': pipeline_result.get('categories', [])
             }
 
         # Update analysis record with results

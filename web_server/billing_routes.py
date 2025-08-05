@@ -9,7 +9,7 @@ from flask import Blueprint, request, jsonify, g
 from flask_login import login_required, current_user
 from .billing_manager import BillingManager, BillingException
 from .billing_models import OrganizationBalance, UsageLog, TariffPlan, FeatureConfig
-from .app import db
+from .extensions import db
 
 billing_bp = Blueprint('billing', __name__)
 

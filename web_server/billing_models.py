@@ -7,7 +7,7 @@ import uuid
 import datetime
 from datetime import datetime
 from typing import Dict, Any, Optional
-from .app import db
+from .extensions import db
 
 class TariffPlan(db.Model):
     """Model for tariff plans with included limits and discounts."""

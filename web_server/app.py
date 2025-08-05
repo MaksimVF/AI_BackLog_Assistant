@@ -114,9 +114,6 @@ migrate.init_app(app, db)
 login_manager.init_app(app)
 login_manager.login_view = 'login'
 
-# Import billing models to register them with SQLAlchemy
-from .billing_models import TariffPlan, OrganizationBalance, UsageLog, FeatureConfig
-
 # Register billing blueprint
 from .billing_routes import billing_bp
 app.register_blueprint(billing_bp)

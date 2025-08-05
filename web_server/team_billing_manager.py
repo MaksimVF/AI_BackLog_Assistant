@@ -15,7 +15,7 @@ Team Billing Manager for AI Backlog Assistant
 """
 
 from datetime import datetime
-from .app import db
+from .extensions import db
 from .billing_models import OrganizationBalance, TariffPlan
 from .billing_manager import BillingException
 
