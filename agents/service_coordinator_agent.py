@@ -15,6 +15,9 @@ from typing import Dict, Any, List, Optional
 from datetime import datetime
 from pydantic import BaseModel
 
+# Import SuperAdminAgent for system administration
+from agents.super_admin_agent import SuperAdminAgent
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -55,21 +58,17 @@ class ServiceCoordinatorAgent:
         self.log_buffer = []
         self.alerts = []
 
+        # Initialize SuperAdminAgent for comprehensive system administration
+        self.admin = SuperAdminAgent()
+
         # Initialize with default status
         self._initialize_system_status()
 
         logger.info(f"Service Coordinator Agent initialized (Session: {self.session_id})")
 
     def _initialize_system_status(self):
-        """Initialize system status with default values"""
-        self.system_status = SystemStatus(
-            cpu_usage="60%",
-            memory_usage="50%",
-            disk_space="75% free",
-            active_services=["llm_core", "pipeline_coordinator", "memory_manager"],
-            system_load="normal",
-            timestamp=datetime.utcnow().isoformat()
-        )
+        """Initialize system status using admin agent"""
+        self.system_status = self.admin.health_check()
 
     def start_monitoring(self, interval: int = 60):
         """
@@ -116,31 +115,18 @@ class ServiceCoordinatorAgent:
                 time.sleep(10)  # Wait before retrying
 
     def _update_system_status(self):
-        """Update system status (simulated for now)"""
-        # In a real implementation, this would query system metrics
-        # For now, we'll simulate some variations
-        import random
-
-        cpu_usage = random.randint(50, 85)
-        memory_usage = random.randint(40, 70)
-        disk_space = random.randint(60, 90)
-
-        self.system_status = SystemStatus(
-            cpu_usage=f"{cpu_usage}%",
-            memory_usage=f"{memory_usage}%",
-            disk_space=f"{disk_space}% free",
-            active_services=["llm_core", "pipeline_coordinator", "memory_manager"],
-            system_load="normal" if cpu_usage < 80 else "high",
-            timestamp=datetime.utcnow().isoformat()
-        )
-
-        logger.debug(f"Updated system status: CPU={cpu_usage}%, Memory={memory_usage}%")
+        """Update system status using admin agent"""
+        # Get real system status from admin agent
+        self.system_status = self.admin.health_check()
+        logger.debug(f"Updated system status from admin agent")
 
     def _check_alerts(self):
         """Check for alert conditions"""
-        cpu_usage = int(self.system_status.cpu_usage.replace('%', ''))
-        memory_usage = int(self.system_status.memory_usage.replace('%', ''))
-        disk_space = int(self.system_status.disk_space.split('%')[0])
+        system_info = self.system_status.get('system_status', {}).get('system', {})
+        cpu_usage = system_info.get('cpu_percent', 0)
+        memory_usage = system_info.get('memory', {}).get('percent', 0)
+        disk_usage = system_info.get('disk', {}).get('percent', 0)
+        disk_free = 100 - disk_usage
 
         # Clear previous alerts
         self.alerts = []
@@ -160,10 +146,10 @@ class ServiceCoordinatorAgent:
                 'timestamp': datetime.utcnow().isoformat()
             })
 
-        if disk_space < 20:
+        if disk_free < 20:
             self.alerts.append({
                 'type': 'critical',
-                'message': f"Low disk space: {disk_space}% free",
+                'message': f"Low disk space: {disk_free}% free",
                 'timestamp': datetime.utcnow().isoformat()
             })
 
@@ -172,7 +158,7 @@ class ServiceCoordinatorAgent:
 
     def get_system_status(self) -> Dict[str, Any]:
         """Get current system status"""
-        return self.system_status.dict()
+        return self.system_status
 
     def analyze_logs(self, log_data: str) -> Dict[str, Any]:
         """
@@ -222,8 +208,9 @@ class ServiceCoordinatorAgent:
             List of optimization recommendations
         """
         current_status = system_status or self.get_system_status()
-        cpu_usage = int(current_status['cpu_usage'].replace('%', ''))
-        memory_usage = int(current_status['memory_usage'].replace('%', ''))
+        system_info = current_status.get('system_status', {}).get('system', {})
+        cpu_usage = int(system_info.get('cpu_percent', 0))
+        memory_usage = int(system_info.get('memory', {}).get('percent', 0))
 
         recommendations = []
 
@@ -259,6 +246,28 @@ class ServiceCoordinatorAgent:
     def get_log_buffer(self) -> List[str]:
         """Get current log buffer"""
         return self.log_buffer.copy()
+
+    def get_system_status(self) -> Dict[str, Any]:
+        """Get current system status using SuperAdminAgent"""
+        # Use admin agent for comprehensive status
+        status = self.admin.health_check()
+        return status
+
+    def handle_exception(self, exception: Exception, source: str, context: dict = None):
+        """Handle exceptions through the SuperAdminAgent"""
+        return self.admin.handle_exception(exception, source, context)
+
+    def check_access(self, user_id: str, action: str, resource: str) -> bool:
+        """Check if a user has permission to perform an action"""
+        return self.admin.check_access(user_id, action, resource)
+
+    def run_security_scan(self) -> dict:
+        """Run a security vulnerability scan"""
+        return self.admin.run_security_scan()
+
+    def get_admin_logs(self, level: str = None) -> list:
+        """Get collected logs from SuperAdminAgent"""
+        return self.admin.get_logs(level)
 
     def __enter__(self):
         """Context manager entry"""

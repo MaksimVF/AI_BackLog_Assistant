@@ -26,11 +26,13 @@ def test_service_coordinator():
         # Test 1: Initial system status
         print("\n1. Testing initial system status...")
         status = coordinator.get_system_status()
-        print(f"   CPU usage: {status['cpu_usage']}")
-        print(f"   Memory usage: {status['memory_usage']}")
-        print(f"   Disk space: {status['disk_space']}")
-        print(f"   System load: {status['system_load']}")
-        print(f"   Active services: {status['active_services']}")
+        system_status = status.get('system_status', {})
+        system_info = system_status.get('system', {})
+        print(f"   CPU usage: {system_info.get('cpu_percent', 'N/A')}%")
+        print(f"   Memory usage: {system_info.get('memory', {}).get('percent', 'N/A')}%")
+        print(f"   Disk usage: {system_info.get('disk', {}).get('percent', 'N/A')}%")
+        print(f"   System load: {system_info.get('cpu_percent', 'N/A')}%")
+        print(f"   Active services: {system_status.get('services', 'N/A')}")
 
         # Test 2: Log analysis
         print("\n2. Testing log analysis...")
@@ -86,7 +88,7 @@ def test_service_coordinator():
         # Test 6: Alert simulation
         print("\n6. Testing alert simulation...")
         # Manually create a critical condition
-        coordinator.system_status.cpu_usage = "95%"
+        coordinator.system_status['system_status']['system']['cpu_percent'] = 95
         coordinator._check_alerts()
 
         alerts = coordinator.get_alerts()

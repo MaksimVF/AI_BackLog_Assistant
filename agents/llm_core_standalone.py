@@ -15,6 +15,9 @@ import logging
 import json
 import uuid
 
+# Import SuperAdminAgent for administrative commands
+from agents.super_admin_agent import SuperAdminAgent
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -29,7 +32,7 @@ class LLMCoreConfig(BaseModel):
 
 class AgentCommand(BaseModel):
     """Standard format for agent commands"""
-    command_type: Literal['process', 'analyze', 'route', 'reflect', 'improve', 'coordinate']
+    command_type: Literal['process', 'analyze', 'route', 'reflect', 'improve', 'coordinate', 'get_health_report', 'run_security_scan', 'check_access']
     agent_id: str
     payload: Dict[str, Any]
     priority: Literal['high', 'medium', 'low'] = 'medium'
@@ -261,6 +264,9 @@ class LLMCore:
         self.reflection_agent = SimpleReflectionAgent()
         self.pipeline_coordinator = SimplePipelineCoordinator()
 
+        # Initialize SuperAdminAgent for administrative commands
+        self.admin_agent = SuperAdminAgent()
+
         # Initialize core components
         self._initialize_components()
 
@@ -300,6 +306,12 @@ class LLMCore:
                 result = self._handle_improve_command(command)
             elif command.command_type == 'coordinate':
                 result = self._handle_coordinate_command(command)
+            elif command.command_type == 'get_health_report':
+                result = self._handle_get_health_report(command)
+            elif command.command_type == 'run_security_scan':
+                result = self._handle_run_security_scan(command)
+            elif command.command_type == 'check_access':
+                result = self._handle_check_access(command)
             else:
                 raise ValueError(f"Unknown command type: {command.command_type}")
 
@@ -526,6 +538,35 @@ class LLMCore:
         """Context manager exit"""
         # Clean up resources if needed
         pass
+
+
+
+    def _handle_get_health_report(self, command: AgentCommand) -> Dict[str, Any]:
+        """Handle get_health_report commands"""
+        # Use admin agent for comprehensive health check
+        report = self.admin_agent.health_check()
+        return report
+
+    def _handle_run_security_scan(self, command: AgentCommand) -> Dict[str, Any]:
+        """Handle run_security_scan commands"""
+        # Use admin agent for security scan
+        scan_result = self.admin_agent.run_security_scan()
+        return scan_result
+
+    def _handle_check_access(self, command: AgentCommand) -> Dict[str, Any]:
+        """Handle check_access commands"""
+        payload = command.payload
+        user_id = payload.get('user_id')
+        action = payload.get('action')
+        resource = payload.get('resource')
+
+        if not user_id or not action or not resource:
+            raise ValueError("Missing required parameters for access check")
+
+        # Use admin agent for access control
+        has_access = self.admin_agent.check_access(user_id, action, resource)
+        return {"user_id": user_id, "action": action, "resource": resource, "has_access": has_access}
+
 
 # Example usage
 if __name__ == "__main__":
