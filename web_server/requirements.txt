@@ -10,3 +10,4 @@ flask-migrate==4.0.4
 
 Authlib==1.2.1
 requests==2.31.0
+PyJWT==2.8.0
