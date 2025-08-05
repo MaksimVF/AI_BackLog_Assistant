@@ -1,7 +1,7 @@
 
 
 """
-ClickHouse client for logs and metrics storage
+ClickHouse client for logs and metrics storage with Kafka integration
 """
 
 import os
@@ -17,23 +17,36 @@ except ImportError:
     Client = None
     ClientException = Exception
 
+# Try to import Kafka
+try:
+    from confluent_kafka import Producer, KafkaException, KafkaError
+    HAS_KAFKA = True
+except ImportError:
+    HAS_KAFKA = False
+
 logger = logging.getLogger(__name__)
 
 class ClickHouseClient:
-    """ClickHouse client for storing and querying logs and metrics"""
+    """ClickHouse client for storing and querying logs and metrics with Kafka integration"""
 
     def __init__(self, config: Optional[Dict] = None):
         """
-        Initialize ClickHouse client
+        Initialize ClickHouse client with Kafka support
 
         Args:
-            config: Configuration dictionary with ClickHouse connection parameters
+            config: Configuration dictionary with ClickHouse and Kafka parameters
         """
         self.config = config or {}
-        self.client = None
-        self._initialize_client()
+        self.clickhouse_client = None
+        self.kafka_producer = None
+        self._initialize_clients()
 
-    def _initialize_client(self):
+    def _initialize_clients(self):
+        """Initialize ClickHouse and Kafka clients from configuration"""
+        self._initialize_clickhouse()
+        self._initialize_kafka()
+
+    def _initialize_clickhouse(self):
         """Initialize ClickHouse client from configuration"""
         if Client is None:
             logger.warning("clickhouse-connect not installed, using mock client")
@@ -41,38 +54,140 @@ class ClickHouseClient:
 
         # Load configuration from environment variables if not provided
         config = {
-            'host': self.config.get('host') or os.getenv('CLICKHOUSE_HOST', 'localhost'),
-            'port': self.config.get('port') or os.getenv('CLICKHOUSE_PORT', 8443),
-            'username': self.config.get('username') or os.getenv('CLICKHOUSE_USER', 'default'),
-            'password': self.config.get('password') or os.getenv('CLICKHOUSE_PASSWORD', ''),
-            'database': self.config.get('database') or os.getenv('CLICKHOUSE_DATABASE', 'ai_backlog_admin'),
-            'secure': self.config.get('secure', True),
-            'verify': self.config.get('verify', True),
-            'ca_cert': self.config.get('ca_cert') or os.getenv('CLICKHOUSE_CA_CERT'),
+            'host': self.config.get('clickhouse_host') or self.config.get('host') or os.getenv('CLICKHOUSE_HOST', 'localhost'),
+            'port': self.config.get('clickhouse_port') or self.config.get('port') or os.getenv('CLICKHOUSE_PORT', 8443),
+            'username': self.config.get('clickhouse_username') or self.config.get('username') or os.getenv('CLICKHOUSE_USER', 'default'),
+            'password': self.config.get('clickhouse_password') or self.config.get('password') or os.getenv('CLICKHOUSE_PASSWORD', ''),
+            'database': self.config.get('clickhouse_database') or self.config.get('database') or os.getenv('CLICKHOUSE_DATABASE', 'ai_backlog_admin'),
+            'secure': self.config.get('clickhouse_secure') or self.config.get('secure', True),
+            'verify': self.config.get('clickhouse_verify') or self.config.get('verify', True),
+            'ca_cert': self.config.get('clickhouse_ca_cert') or self.config.get('ca_cert') or os.getenv('CLICKHOUSE_CA_CERT'),
         }
 
         try:
-            self.client = Client(**config)
-            self._test_connection()
+            self.clickhouse_client = Client(**config)
+            self._test_clickhouse_connection()
         except Exception as e:
             logger.error(f"Failed to initialize ClickHouse client: {e}")
-            self.client = None
+            self.clickhouse_client = None
 
-    def _test_connection(self):
+    def _initialize_kafka(self):
+        """Initialize Kafka producer from configuration"""
+        if not HAS_KAFKA:
+            logger.warning("Kafka not available, using direct ClickHouse storage")
+            return
+
+        # Load Kafka configuration from environment variables if not provided
+        kafka_config = {
+            'bootstrap.servers': self.config.get('kafka_servers') or os.getenv('KAFKA_SERVERS', 'localhost:9092'),
+            'client.id': self.config.get('kafka_client_id') or os.getenv('KAFKA_CLIENT_ID', 'ai-backlog-agent'),
+            'security.protocol': self.config.get('kafka_security_protocol') or os.getenv('KAFKA_SECURITY_PROTOCOL', 'PLAINTEXT'),
+            'sasl.mechanisms': self.config.get('kafka_sasl_mechanisms') or os.getenv('KAFKA_SASL_MECHANISMS', ''),
+            'sasl.username': self.config.get('kafka_sasl_username') or os.getenv('KAFKA_SASL_USERNAME', ''),
+            'sasl.password': self.config.get('kafka_sasl_password') or os.getenv('KAFKA_SASL_PASSWORD', ''),
+        }
+
+        # Remove empty SASL settings if not needed
+        if not kafka_config['sasl.mechanisms']:
+            kafka_config.pop('sasl.mechanisms', None)
+            kafka_config.pop('sasl.username', None)
+            kafka_config.pop('sasl.password', None)
+
+        try:
+            self.kafka_producer = Producer(kafka_config)
+            logger.info("Kafka producer initialized successfully")
+        except Exception as e:
+            logger.error(f"Failed to initialize Kafka producer: {e}")
+            self.kafka_producer = None
+
+    def _test_clickhouse_connection(self):
         """Test ClickHouse connection"""
-        if not self.client:
+        if not self.clickhouse_client:
             return False
 
         try:
-            result = self.client.command('SELECT 1')
+            result = self.clickhouse_client.command('SELECT 1')
             return result == '1\n'
         except Exception as e:
             logger.error(f"ClickHouse connection test failed: {e}")
             return False
 
+    def is_clickhouse_connected(self) -> bool:
+        """Check if ClickHouse client is connected"""
+        return self.clickhouse_client is not None
+
+    def is_kafka_connected(self) -> bool:
+        """Check if Kafka producer is available"""
+        return self.kafka_producer is not None
+
     def is_connected(self) -> bool:
-        """Check if client is connected"""
-        return self.client is not None
+        """Check if either ClickHouse or Kafka is connected"""
+        return self.is_clickhouse_connected() or self.is_kafka_connected()
+
+    def _send_to_kafka(self, topic: str, message: Dict[str, Any]) -> bool:
+        """
+        Send a message to Kafka topic
+
+        Args:
+            topic: Kafka topic name
+            message: Message to send as dictionary
+
+        Returns:
+            bool: True if successful, False otherwise
+        """
+        if not self.kafka_producer:
+            return False
+
+        try:
+            # Convert message to JSON string
+            message_str = json.dumps(message).encode('utf-8')
+
+            # Produce message to Kafka
+            self.kafka_producer.produce(
+                topic=topic,
+                value=message_str,
+                callback=self._kafka_delivery_callback
+            )
+
+            # Flush to ensure message is sent
+            self.kafka_producer.flush()
+            return True
+        except Exception as e:
+            logger.error(f"Failed to send message to Kafka topic {topic}: {e}")
+            return False
+
+    def _kafka_delivery_callback(self, err, msg):
+        """Callback for Kafka message delivery"""
+        if err:
+            logger.error(f"Kafka message delivery failed: {err}")
+        else:
+            logger.debug(f"Kafka message delivered to {msg.topic()} [{msg.partition()}]")
+
+    def _store_direct_to_clickhouse(self, table: str, data: Dict[str, Any], column_names: List[str]) -> bool:
+        """
+        Store data directly to ClickHouse
+
+        Args:
+            table: Table name
+            data: Data to store as dictionary
+            column_names: List of column names
+
+        Returns:
+            bool: True if successful, False otherwise
+        """
+        if not self.clickhouse_client:
+            return False
+
+        try:
+            # Convert data to list of values in the correct order
+            values = [data[col] for col in column_names]
+
+            # Insert into ClickHouse
+            self.clickhouse_client.insert(table, [values], column_names=column_names)
+            return True
+        except Exception as e:
+            logger.error(f"Failed to store data in ClickHouse table {table}: {e}")
+            return False
 
     def store_log(
         self,
@@ -84,7 +199,7 @@ class ClickHouseClient:
         session_id: Optional[Union[str, UUID]] = None
     ) -> bool:
         """
-        Store a log entry in ClickHouse
+        Store a log entry in ClickHouse (via Kafka if available)
 
         Args:
             level: Log level (info, warning, error, etc.)
@@ -97,42 +212,59 @@ class ClickHouseClient:
         Returns:
             bool: True if successful, False otherwise
         """
-        if not self.client:
-            return False
+        # Prepare log data
+        timestamp = datetime.utcnow()
 
-        try:
-            if session_id and not isinstance(session_id, UUID):
-                try:
-                    session_id = UUID(session_id)
-                except ValueError:
-                    session_id = uuid4()
-
-            if not session_id:
+        if session_id and not isinstance(session_id, UUID):
+            try:
+                session_id = UUID(session_id)
+            except ValueError:
                 session_id = uuid4()
 
-            if metadata is None:
-                metadata = {}
+        if not session_id:
+            session_id = uuid4()
 
-            # Convert metadata to JSON string for Map type
-            metadata_str = json.dumps(metadata)
+        if metadata is None:
+            metadata = {}
 
-            query = """
-            INSERT INTO logs (
-                timestamp, level, source, message, metadata, agent_id, session_id
-            ) VALUES
-            """
-            values = [
-                (datetime.utcnow(), level, source, message, metadata_str, agent_id, session_id)
-            ]
+        # Prepare message for Kafka
+        log_message = {
+            "timestamp": timestamp.isoformat(),
+            "level": level,
+            "source": source,
+            "message": message,
+            "metadata": metadata,
+            "agent_id": agent_id,
+            "session_id": str(session_id),
+            "message_type": "log"
+        }
 
-            self.client.insert('logs', values, column_names=[
-                'timestamp', 'level', 'source', 'message', 'metadata', 'agent_id', 'session_id'
-            ])
+        # Try Kafka first if available
+        if self.kafka_producer:
+            if self._send_to_kafka("ai_backlog_logs", log_message):
+                return True
 
-            return True
-        except Exception as e:
-            logger.error(f"Failed to store log: {e}")
-            return False
+        # Fallback to direct ClickHouse storage
+        if self.clickhouse_client:
+            try:
+                # Convert metadata to JSON string for Map type
+                metadata_str = json.dumps(metadata)
+
+                values = [
+                    (timestamp, level, source, message, metadata_str, agent_id, session_id)
+                ]
+
+                self.clickhouse_client.insert('logs', values, column_names=[
+                    'timestamp', 'level', 'source', 'message', 'metadata', 'agent_id', 'session_id'
+                ])
+
+                return True
+            except Exception as e:
+                logger.error(f"Failed to store log: {e}")
+                return False
+
+        logger.warning("Neither Kafka nor ClickHouse is available, log not stored")
+        return False
 
     def store_metric(
         self,
@@ -143,7 +275,7 @@ class ClickHouseClient:
         session_id: Optional[Union[str, UUID]] = None
     ) -> bool:
         """
-        Store a metric in ClickHouse
+        Store a metric in ClickHouse (via Kafka if available)
 
         Args:
             metric_name: Name of the metric
@@ -155,35 +287,50 @@ class ClickHouseClient:
         Returns:
             bool: True if successful, False otherwise
         """
-        if not self.client:
+        # Prepare metric data
+        timestamp = datetime.utcnow()
+
+        if session_id and not isinstance(session_id, UUID):
+            try:
+                session_id = UUID(session_id)
+            except ValueError:
+                session_id = uuid4()
+
+        if not session_id:
+            session_id = uuid4()
+
+        if tags is None:
+            tags = {}
+
+        # Prepare message for Kafka
+        metric_message = {
+            "timestamp": timestamp.isoformat(),
+            "metric_name": metric_name,
+            "value": value,
+            "tags": tags,
+            "agent_id": agent_id,
+            "session_id": str(session_id),
+            "message_type": "metric"
+        }
+
+        # Try Kafka first if available
+        if self.kafka_producer:
+            if self._send_to_kafka("ai_backlog_metrics", metric_message):
+                return True
+
+        # Fallback to direct ClickHouse storage
+        if not self.clickhouse_client:
             return False
 
         try:
-            if session_id and not isinstance(session_id, UUID):
-                try:
-                    session_id = UUID(session_id)
-                except ValueError:
-                    session_id = uuid4()
-
-            if not session_id:
-                session_id = uuid4()
-
-            if tags is None:
-                tags = {}
-
             # Convert tags to JSON string for Map type
             tags_str = json.dumps(tags)
 
-            query = """
-            INSERT INTO metrics (
-                timestamp, metric_name, value, tags, agent_id, session_id
-            ) VALUES
-            """
             values = [
-                (datetime.utcnow(), metric_name, value, tags_str, agent_id, session_id)
+                (timestamp, metric_name, value, tags_str, agent_id, session_id)
             ]
 
-            self.client.insert('metrics', values, column_names=[
+            self.clickhouse_client.insert('metrics', values, column_names=[
                 'timestamp', 'metric_name', 'value', 'tags', 'agent_id', 'session_id'
             ])
 
@@ -202,7 +349,7 @@ class ClickHouseClient:
         session_id: Optional[Union[str, UUID]] = None
     ) -> bool:
         """
-        Store an event in ClickHouse
+        Store an event in ClickHouse (via Kafka if available)
 
         Args:
             event_type: Type of event
@@ -215,35 +362,51 @@ class ClickHouseClient:
         Returns:
             bool: True if successful, False otherwise
         """
-        if not self.client:
+        # Prepare event data
+        timestamp = datetime.utcnow()
+
+        if session_id and not isinstance(session_id, UUID):
+            try:
+                session_id = UUID(session_id)
+            except ValueError:
+                session_id = uuid4()
+
+        if not session_id:
+            session_id = uuid4()
+
+        if metadata is None:
+            metadata = {}
+
+        # Prepare message for Kafka
+        event_message = {
+            "timestamp": timestamp.isoformat(),
+            "event_type": event_type,
+            "source": source,
+            "details": details,
+            "metadata": metadata,
+            "agent_id": agent_id,
+            "session_id": str(session_id),
+            "message_type": "event"
+        }
+
+        # Try Kafka first if available
+        if self.kafka_producer:
+            if self._send_to_kafka("ai_backlog_events", event_message):
+                return True
+
+        # Fallback to direct ClickHouse storage
+        if not self.clickhouse_client:
             return False
 
         try:
-            if session_id and not isinstance(session_id, UUID):
-                try:
-                    session_id = UUID(session_id)
-                except ValueError:
-                    session_id = uuid4()
-
-            if not session_id:
-                session_id = uuid4()
-
-            if metadata is None:
-                metadata = {}
-
             # Convert metadata to JSON string for Map type
             metadata_str = json.dumps(metadata)
 
-            query = """
-            INSERT INTO events (
-                timestamp, event_type, source, details, metadata, agent_id, session_id
-            ) VALUES
-            """
             values = [
-                (datetime.utcnow(), event_type, source, details, metadata_str, agent_id, session_id)
+                (timestamp, event_type, source, details, metadata_str, agent_id, session_id)
             ]
 
-            self.client.insert('events', values, column_names=[
+            self.clickhouse_client.insert('events', values, column_names=[
                 'timestamp', 'event_type', 'source', 'details', 'metadata', 'agent_id', 'session_id'
             ])
 

@@ -16,10 +16,14 @@ ClickHouse is used as a high-performance, scalable storage solution for:
 ## Architecture
 
 ```
-[Agents] → [ClickHouse Client] → [ClickHouse Database]
-     ↑                          ↑
-    Query                      Store
+[Agents] → [Kafka Topics] → [Kafka Consumer Service] → [ClickHouse Database]
+     ↑                          ↑                          ↑
+   Produce                    Consume                   Store/Query
 ```
+
+## Kafka Integration
+
+The system uses Kafka as an intermediate buffer for better reliability and scalability. See [README_KAFKA_INTEGRATION.md](README_KAFKA_INTEGRATION.md) for details.
 
 ## Schema Design
 
@@ -36,6 +40,8 @@ ClickHouse is used as a high-performance, scalable storage solution for:
 
 ## Configuration
 
+### ClickHouse Configuration
+
 ClickHouse configuration is loaded from environment variables:
 
 - `CLICKHOUSE_HOST`: ClickHouse server host (default: localhost)
@@ -45,6 +51,17 @@ ClickHouse configuration is loaded from environment variables:
 - `CLICKHOUSE_DATABASE`: ClickHouse database name (default: ai_backlog_admin)
 - `CLICKHOUSE_SECURE`: Use secure connection (default: true)
 - `CLICKHOUSE_CA_CERT`: Path to CA certificate for secure connections
+
+### Kafka Configuration
+
+Kafka configuration is also loaded from environment variables:
+
+- `KAFKA_SERVERS`: Kafka bootstrap servers (default: localhost:9092)
+- `KAFKA_CLIENT_ID`: Kafka client ID (default: ai-backlog-agent)
+- `KAFKA_SECURITY_PROTOCOL`: Security protocol (default: PLAINTEXT)
+- `KAFKA_SASL_MECHANISMS`: SASL mechanisms (optional)
+- `KAFKA_SASL_USERNAME`: SASL username (optional)
+- `KAFKA_SASL_PASSWORD`: SASL password (optional)
 
 ## Integration Points
 
