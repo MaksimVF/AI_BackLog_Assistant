@@ -24,4 +24,11 @@ python-docx
 clickhouse-connect
 confluent-kafka
 
+# Security dependencies
+fastapi
+uvicorn
+python-jose[cryptography]
+passlib[bcrypt]
+python-multipart
+
 
