@@ -44,3 +44,12 @@ QUEUE_NAMES = {
 
 # NLP и эмбеддинги
 EMBEDDING_MODEL_NAME = os.getenv("EMBEDDING_MODEL_NAME", "intfloat/multilingual-e5-small")
+
+# Security settings
+SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key-here")  # Change this in production!
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 30
+
+# SSL/TLS settings
+SSL_CERTIFICATE = os.getenv("SSL_CERTIFICATE", "cert.pem")
+SSL_KEY = os.getenv("SSL_KEY", "key.pem")
