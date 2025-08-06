@@ -1,9 +1,7 @@
 
 
-
-
 """
-Service Coordinator Agent - Handles continuous monitoring and system administration
+Service Coordinator Agent - Enhanced version with comprehensive system monitoring and real metrics
 """
 
 import sys
@@ -23,7 +21,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 class SystemStatus(BaseModel):
-    """System status model"""
+    """Enhanced system status model with comprehensive metrics"""
     cpu_usage: str
     memory_usage: str
     disk_space: str
@@ -32,16 +30,20 @@ class SystemStatus(BaseModel):
     timestamp: str
 
 class LogAnalysis(BaseModel):
-    """Log analysis model"""
+    """Enhanced log analysis model with pattern detection"""
     total_logs: int
     error_count: int
     warning_count: int
+    critical_count: int = 0
+    info_count: int = 0
+    error_patterns: Dict[str, int] = {}
+    warning_patterns: Dict[str, int] = {}
     critical_issues: List[str]
     recommended_actions: List[str]
     timestamp: str
 
 class ServiceCoordinatorAgent:
-    """Service Coordinator Agent for continuous monitoring and administration"""
+    """Enhanced Service Coordinator Agent for comprehensive monitoring and administration"""
 
     def __init__(self, config: Optional[Dict[str, Any]] = None):
         """
@@ -64,7 +66,7 @@ class ServiceCoordinatorAgent:
         # Initialize with default status
         self._initialize_system_status()
 
-        logger.info(f"Service Coordinator Agent initialized (Session: {self.session_id})")
+        logger.info(f"Enhanced Service Coordinator Agent initialized (Session: {self.session_id})")
 
     def _initialize_system_status(self):
         """Initialize system status using admin agent"""
@@ -121,40 +123,109 @@ class ServiceCoordinatorAgent:
         logger.debug(f"Updated system status from admin agent")
 
     def _check_alerts(self):
-        """Check for alert conditions"""
-        system_info = self.system_status.get('system_status', {}).get('system', {})
-        cpu_usage = system_info.get('cpu_percent', 0)
-        memory_usage = system_info.get('memory', {}).get('percent', 0)
-        disk_usage = system_info.get('disk', {}).get('percent', 0)
+        """Check for alert conditions with comprehensive thresholds"""
+        # Get comprehensive system status
+        system_status = self.system_status.get('system_status', {})
+        system_info = system_status.get('system', {})
+
+        # Extract metrics with fallback defaults
+        cpu_info = system_info.get('cpu', {})
+        cpu_usage = cpu_info.get('percent', 0)
+        cpu_load_avg = cpu_info.get('load_avg', {})
+
+        memory_info = system_info.get('memory', {})
+        virtual_memory = memory_info.get('virtual', {})
+        memory_usage = virtual_memory.get('percent', 0)
+
+        disk_info = system_info.get('disk', {})
+        disk_usage = disk_info.get('usage', {}).get('percent', 0)
         disk_free = 100 - disk_usage
+
+        processes_info = system_info.get('processes', {})
+        process_count = processes_info.get('count', 0)
 
         # Clear previous alerts
         self.alerts = []
 
-        # Check for critical conditions
+        # Check for critical conditions with more sophisticated thresholds
         if cpu_usage > 90:
             self.alerts.append({
                 'type': 'critical',
                 'message': f"High CPU usage: {cpu_usage}%",
+                'recommendation': 'Consider adding more CPU resources or optimizing processes',
+                'timestamp': datetime.utcnow().isoformat()
+            })
+        elif cpu_usage > 80:
+            self.alerts.append({
+                'type': 'warning',
+                'message': f"Elevated CPU usage: {cpu_usage}%",
+                'recommendation': 'Monitor CPU usage closely',
                 'timestamp': datetime.utcnow().isoformat()
             })
 
-        if memory_usage > 85:
+        # Check CPU load average
+        if cpu_load_avg.get('15_min', 0) > cpu_info.get('logical_cores', 1) * 0.8:
+            self.alerts.append({
+                'type': 'warning',
+                'message': f"High CPU load average (15min): {cpu_load_avg.get('15_min'):.2f}",
+                'recommendation': 'Investigate long-running processes',
+                'timestamp': datetime.utcnow().isoformat()
+            })
+
+        # Memory alerts
+        if memory_usage > 90:
             self.alerts.append({
                 'type': 'critical',
                 'message': f"High memory usage: {memory_usage}%",
+                'recommendation': 'Consider adding more RAM or optimizing memory usage',
+                'timestamp': datetime.utcnow().isoformat()
+            })
+        elif memory_usage > 80:
+            self.alerts.append({
+                'type': 'warning',
+                'message': f"Elevated memory usage: {memory_usage}%",
+                'recommendation': 'Monitor memory usage closely',
                 'timestamp': datetime.utcnow().isoformat()
             })
 
-        if disk_free < 20:
+        # Disk alerts
+        if disk_free < 10:
             self.alerts.append({
                 'type': 'critical',
+                'message': f"Critical low disk space: {disk_free}% free",
+                'recommendation': 'Immediately free up disk space',
+                'timestamp': datetime.utcnow().isoformat()
+            })
+        elif disk_free < 20:
+            self.alerts.append({
+                'type': 'warning',
                 'message': f"Low disk space: {disk_free}% free",
+                'recommendation': 'Plan to free up disk space soon',
                 'timestamp': datetime.utcnow().isoformat()
             })
 
+        # Process count alerts
+        if process_count > 500:  # Threshold for high process count
+            self.alerts.append({
+                'type': 'warning',
+                'message': f"High process count: {process_count}",
+                'recommendation': 'Investigate potential process leaks',
+                'timestamp': datetime.utcnow().isoformat()
+            })
+
+        # Check service status alerts
+        services_status = system_status.get('services', {})
+        for service, status in services_status.items():
+            if status != 'ok':
+                self.alerts.append({
+                    'type': 'critical',
+                    'message': f"Service {service} is down or unreachable",
+                    'recommendation': f'Check {service} service status',
+                    'timestamp': datetime.utcnow().isoformat()
+                })
+
         if self.alerts:
-            logger.warning(f"Alerts detected: {len(self.alerts)} critical conditions")
+            logger.warning(f"Alerts detected: {len(self.alerts)} conditions requiring attention")
 
     def get_system_status(self) -> Dict[str, Any]:
         """Get current system status"""
@@ -162,34 +233,106 @@ class ServiceCoordinatorAgent:
 
     def analyze_logs(self, log_data: str) -> Dict[str, Any]:
         """
-        Analyze log data
+        Analyze log data with enhanced pattern recognition
 
         Args:
             log_data: Log data to analyze
 
         Returns:
-            Log analysis results
+            Log analysis results with detailed insights
         """
-        # Simple log analysis
+        # Enhanced log analysis
         lines = log_data.split('\n') if log_data else []
-        error_count = sum(1 for line in lines if 'error' in line.lower())
-        warning_count = sum(1 for line in lines if 'warning' in line.lower())
 
+        # Count different log levels
+        error_count = 0
+        warning_count = 0
+        info_count = 0
+        critical_count = 0
+
+        # Track specific error patterns
+        error_patterns = {}
+        warning_patterns = {}
+
+        # Common patterns to detect
+        patterns_to_detect = {
+            'database': ['database', 'db connection', 'sql error', 'connection failed'],
+            'memory': ['memory leak', 'out of memory', 'memory error'],
+            'network': ['network error', 'connection timeout', 'socket error'],
+            'performance': ['slow query', 'high latency', 'timeout'],
+            'security': ['unauthorized', 'access denied', 'security violation']
+        }
+
+        for line in lines:
+            lower_line = line.lower()
+
+            if 'error' in lower_line or 'exception' in lower_line or 'critical' in lower_line:
+                error_count += 1
+                if 'critical' in lower_line:
+                    critical_count += 1
+
+                # Check for specific patterns
+                for pattern_type, keywords in patterns_to_detect.items():
+                    if any(keyword in lower_line for keyword in keywords):
+                        error_patterns[pattern_type] = error_patterns.get(pattern_type, 0) + 1
+
+            elif 'warning' in lower_line or 'warn' in lower_line:
+                warning_count += 1
+                for pattern_type, keywords in patterns_to_detect.items():
+                    if any(keyword in lower_line for keyword in keywords):
+                        warning_patterns[pattern_type] = warning_patterns.get(pattern_type, 0) + 1
+
+            elif 'info' in lower_line or 'information' in lower_line:
+                info_count += 1
+
+        # Generate critical issues and recommendations
         critical_issues = []
         recommended_actions = []
 
+        # General issues
         if error_count > 0:
             critical_issues.append(f"Found {error_count} error(s) in logs")
-            recommended_actions.append("Investigate error sources")
+            recommended_actions.append("Investigate error sources immediately")
 
-        if warning_count > 3:  # More than 3 warnings is concerning
+        if critical_count > 0:
+            critical_issues.append(f"Found {critical_count} critical error(s)")
+            recommended_actions.append("Address critical errors urgently")
+
+        if warning_count > 5:  # More than 5 warnings is concerning
             critical_issues.append(f"Found {warning_count} warnings in logs")
             recommended_actions.append("Review warning messages")
+
+        # Specific pattern issues
+        for pattern_type, count in error_patterns.items():
+            if count > 0:
+                critical_issues.append(f"Found {count} {pattern_type}-related error(s)")
+                if pattern_type == 'database':
+                    recommended_actions.append("Check database connections and queries")
+                elif pattern_type == 'memory':
+                    recommended_actions.append("Investigate memory usage and leaks")
+                elif pattern_type == 'network':
+                    recommended_actions.append("Check network connectivity and configurations")
+                elif pattern_type == 'performance':
+                    recommended_actions.append("Optimize slow operations and queries")
+                elif pattern_type == 'security':
+                    recommended_actions.append("Review security configurations immediately")
+
+        # Add general recommendations based on log volume
+        if len(lines) > 1000:
+            recommended_actions.append("Consider implementing log rotation")
+        if error_count > 10:
+            recommended_actions.append("Enable detailed error logging for debugging")
+        if warning_count > 20:
+            recommended_actions.append("Review application configurations")
 
         log_analysis = LogAnalysis(
             total_logs=len(lines),
             error_count=error_count,
             warning_count=warning_count,
+            critical_count=critical_count,
+            info_count=info_count,
+            error_patterns=error_patterns,
+            warning_patterns=warning_patterns,
             critical_issues=critical_issues,
             recommended_actions=recommended_actions,
             timestamp=datetime.utcnow().isoformat()
@@ -199,32 +342,109 @@ class ServiceCoordinatorAgent:
 
     def get_optimization_recommendations(self, system_status: Optional[Dict[str, Any]] = None) -> List[str]:
         """
-        Get resource optimization recommendations
+        Get comprehensive resource optimization recommendations based on detailed system metrics
 
         Args:
             system_status: Current system status (optional)
 
         Returns:
-            List of optimization recommendations
+            List of optimization recommendations with specific actions
         """
         current_status = system_status or self.get_system_status()
         system_info = current_status.get('system_status', {}).get('system', {})
-        cpu_usage = int(system_info.get('cpu_percent', 0))
-        memory_usage = int(system_info.get('memory', {}).get('percent', 0))
+
+        # Extract detailed metrics
+        cpu_info = system_info.get('cpu', {})
+        cpu_usage = cpu_info.get('percent', 0)
+        cpu_cores = cpu_info.get('logical_cores', 1)
+        cpu_load_avg = cpu_info.get('load_avg', {})
+
+        memory_info = system_info.get('memory', {})
+        virtual_memory = memory_info.get('virtual', {})
+        memory_usage = virtual_memory.get('percent', 0)
+        memory_used = virtual_memory.get('used', 0)
+        memory_total = virtual_memory.get('total', 1)
+
+        disk_info = system_info.get('disk', {})
+        disk_usage = disk_info.get('usage', {}).get('percent', 0)
+        disk_used = disk_info.get('usage', {}).get('used', 0)
+        disk_total = disk_info.get('usage', {}).get('total', 1)
+
+        process_info = system_info.get('processes', {})
+        process_count = process_info.get('count', 0)
+        top_processes = process_info.get('top_processes', [])
 
         recommendations = []
 
-        if cpu_usage > 80:
-            recommendations.append("Optimize CPU usage by balancing workload across cores")
-            recommendations.append("Consider adding more CPU resources during peak hours")
+        # CPU optimization recommendations
+        if cpu_usage > 90:
+            recommendations.append("🚨 CRITICAL: CPU usage > 90% - Immediate action required")
+            recommendations.append("  - Identify and terminate unnecessary processes")
+            recommendations.append("  - Consider emergency scaling or load balancing")
+        elif cpu_usage > 80:
+            recommendations.append("⚠️  WARNING: CPU usage > 80% - Optimize workload")
+            recommendations.append("  - Review and optimize CPU-intensive processes")
+            recommendations.append("  - Implement process prioritization")
 
-        if memory_usage > 75:
-            recommendations.append("Optimize memory usage by clearing unused caches")
-            recommendations.append("Review memory-intensive processes")
+        # CPU load average analysis
+        if cpu_load_avg.get('15_min', 0) > cpu_cores:
+            recommendations.append(f"⚠️  High CPU load average (15min): {cpu_load_avg.get('15_min'):.2f}")
+            recommendations.append("  - Investigate long-running or blocked processes")
+            recommendations.append("  - Consider adding more CPU cores")
 
-        # General recommendations
-        recommendations.append("Review and optimize long-running processes")
-        recommendations.append("Consider implementing auto-scaling for high-load periods")
+        # Memory optimization recommendations
+        if memory_usage > 90:
+            recommendations.append("🚨 CRITICAL: Memory usage > 90% - Immediate action required")
+            recommendations.append("  - Restart memory-intensive services")
+            recommendations.append("  - Add more RAM immediately")
+        elif memory_usage > 80:
+            recommendations.append("⚠️  WARNING: Memory usage > 80% - Optimize memory usage")
+            recommendations.append("  - Clear unused caches and temporary data")
+            recommendations.append("  - Optimize memory allocation in applications")
+
+        # Check for memory leaks
+        if memory_used > 0.9 * memory_total and process_count > 100:
+            recommendations.append("⚠️  Potential memory leak detected")
+            recommendations.append("  - Monitor memory usage over time")
+            recommendations.append("  - Identify processes with growing memory usage")
+
+        # Disk optimization recommendations
+        if disk_usage > 90:
+            recommendations.append("🚨 CRITICAL: Disk usage > 90% - Immediate action required")
+            recommendations.append("  - Delete unnecessary files and logs")
+            recommendations.append("  - Add more storage capacity immediately")
+        elif disk_usage > 80:
+            recommendations.append("⚠️  WARNING: Disk usage > 80% - Free up space")
+            recommendations.append("  - Implement log rotation and cleanup policies")
+            recommendations.append("  - Archive old data to external storage")
+
+        # Process optimization recommendations
+        if process_count > 500:
+            recommendations.append("⚠️  High process count detected")
+            recommendations.append("  - Investigate potential process leaks")
+            recommendations.append("  - Review process management policies")
+
+        # Top process analysis
+        if top_processes:
+            high_cpu_processes = [p for p in top_processes if p.get('cpu_percent', 0) > 50]
+            high_memory_processes = [p for p in top_processes if p.get('memory_percent', 0) > 30]
+
+            if high_cpu_processes:
+                recommendations.append("⚠️  Processes with high CPU usage:")
+                for proc in high_cpu_processes:
+                    recommendations.append(f"  - {proc.get('name')}: {proc.get('cpu_percent')}% CPU")
+
+            if high_memory_processes:
+                recommendations.append("⚠️  Processes with high memory usage:")
+                for proc in high_memory_processes:
+                    recommendations.append(f"  - {proc.get('name')}: {proc.get('memory_percent')}% memory")
+
+        # General best practices
+        recommendations.append("\n🔧 General optimization recommendations:")
+        recommendations.append("  - Implement auto-scaling for peak load periods")
+        recommendations.append("  - Set up regular system maintenance windows")
+        recommendations.append("  - Monitor system metrics continuously")
+        recommendations.append("  - Implement resource quotas and limits")
 
         return recommendations
 
@@ -283,7 +503,7 @@ class ServiceCoordinatorAgent:
 
 # Example usage
 if __name__ == "__main__":
-    print("=== Service Coordinator Agent Demo ===")
+    print("=== Enhanced Service Coordinator Agent Demo ===")
 
     with ServiceCoordinatorAgent() as coordinator:
         # Start monitoring
@@ -298,18 +518,21 @@ if __name__ == "__main__":
             print(f"   System load: {status['system_load']}")
 
             # Test log analysis
-            print("\n2. Log analysis:")
+            print("\n2. Enhanced log analysis:")
             log_data = """[2025-08-05 10:15:30] INFO: System started
 [2025-08-05 10:16:45] WARNING: High memory usage detected
-[2025-08-05 10:17:22] ERROR: Connection to database failed"""
+[2025-08-05 10:17:22] ERROR: Connection to database failed
+[2025-08-05 10:18:10] ERROR: Memory leak detected in process 1234
+[2025-08-05 10:19:05] CRITICAL: System unresponsive due to high load"""
 
             analysis = coordinator.analyze_logs(log_data)
             print(f"   Errors: {analysis['error_count']}")
             print(f"   Warnings: {analysis['warning_count']}")
             print(f"   Critical issues: {analysis['critical_issues']}")
+            print(f"   Recommendations: {analysis['recommended_actions']}")
 
             # Get optimization recommendations
-            print("\n3. Optimization recommendations:")
+            print("\n3. Comprehensive optimization recommendations:")
             recommendations = coordinator.get_optimization_recommendations()
             for i, rec in enumerate(recommendations, 1):
                 print(f"   {i}. {rec}")
@@ -328,7 +551,4 @@ if __name__ == "__main__":
             print("\nStopping demo...")
 
     print("=== Demo completed ===")
-
-
-
 

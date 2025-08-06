@@ -1,8 +1,6 @@
 
 
 
-
-
 # AI BackLog Assistant
 
 ## Overview
@@ -26,11 +24,12 @@ The central intelligence module that handles:
 
 ### 2. ServiceCoordinatorAgent
 
-Dedicated agent for continuous system monitoring and administration:
-- Real-time system monitoring
-- Alert generation
-- Log analysis
-- Resource optimization
+Enhanced agent for comprehensive system monitoring and administration:
+- **Real-time system monitoring** with detailed metrics (CPU, memory, disk, network, processes)
+- **Advanced alert generation** with multi-level thresholds and recommendations
+- **Enhanced log analysis** with pattern detection for common issues
+- **Comprehensive resource optimization** with specific actionable recommendations
+- **Process monitoring** with top resource consumers identification
 
 ### 3. Integration Layer
 
@@ -46,11 +45,13 @@ Unified interface that combines LLM Core and ServiceCoordinatorAgent for seamles
 - ✅ Administrative command handling
 
 ### Administrative Features
-- ✅ System monitoring
-- ✅ Log analysis
-- ✅ Resource optimization
-- ✅ Alert generation
-- ✅ Continuous monitoring
+- ✅ **Enhanced system monitoring** with comprehensive metrics
+- ✅ **Advanced log analysis** with pattern detection
+- ✅ **Detailed resource optimization** recommendations
+- ✅ **Multi-level alert generation** with actionable insights
+- ✅ **Continuous monitoring** with real-time metrics
+- ✅ **Process monitoring** with top resource consumers
+- ✅ **System health reporting** with detailed diagnostics
 
 ### Testing
 - ✅ Unit tests for all components
@@ -83,6 +84,9 @@ python test_service_coordinator.py
 
 # Test integration
 python test_integration.py
+
+# Test enhanced monitoring
+python test_enhanced_monitoring.py
 ```
 
 ## Usage
@@ -179,7 +183,7 @@ Legacy and outdated documentation has been moved to the `docs/legacy/` directory
 ├── agents/                # Agent implementations
 │   ├── llm_core.py        # Main LLM Core
 │   ├── llm_core_standalone.py  # Standalone version
-│   ├── service_coordinator_agent.py  # Service coordinator
+│   ├── service_coordinator_agent.py  # Enhanced service coordinator
 │   └── ...                # Other agents
 ├── tests/                 # Test scripts
 ├── docs/                  # Documentation
@@ -189,7 +193,7 @@ Legacy and outdated documentation has been moved to the `docs/legacy/` directory
 ## Roadmap
 
 ### Near-term Goals
-- [ ] Integrate real system metrics
+- ✅ **Integrate real system metrics** (CPU, memory, disk, network, processes)
 - [ ] Add persistent storage for logs
 - [ ] Implement web dashboard
 - [ ] Enhance security measures
@@ -211,5 +215,4 @@ This project is licensed under the MIT License.
 ---
 
 **Note**: This is a pre-production version. Some features may be subject to change.
-
 
