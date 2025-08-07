@@ -51,6 +51,7 @@ class User(db.Model, UserMixin):
     google_id = db.Column(db.String(64), unique=True, nullable=True)
 
     is_active = db.Column(db.Boolean, nullable=False, default=True)
+    role = db.Column(db.String(20), nullable=False, default='user')  # user, admin
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
     def set_password(self, password):
