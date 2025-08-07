@@ -1,0 +1,12 @@
+
+
+
+# Test configuration for SelfHealingAgent
+cpu_critical: 90.0
+memory_critical: 90.0
+disk_critical: 85.0
+process_count_max: 800
+cache_cleanup_interval: 64800  # 18 hours
+temp_file_cleanup_interval: 32400  # 9 hours
+
+
