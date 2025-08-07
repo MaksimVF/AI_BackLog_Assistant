@@ -1,0 +1,14 @@
+
+
+
+
+# Production configuration for SelfHealingAgent
+cpu_critical: 95.0
+memory_critical: 95.0
+disk_critical: 90.0
+process_count_max: 1000
+cache_cleanup_interval: 86400  # 24 hours
+temp_file_cleanup_interval: 43200  # 12 hours
+
+
+

@@ -1,0 +1,10 @@
+
+
+# Development configuration for SelfHealingAgent
+cpu_critical: 85.0
+memory_critical: 85.0
+disk_critical: 80.0
+process_count_max: 500
+cache_cleanup_interval: 43200  # 12 hours
+temp_file_cleanup_interval: 21600  # 6 hours
+
