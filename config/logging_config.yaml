@@ -1,0 +1,41 @@
+
+
+
+
+
+# Logging configuration for AI_BackLog_Assistant
+service_name: "AI_BackLog_Assistant"
+environment: "dev"  # Will be overridden by ENV variable
+log_level: "INFO"
+log_file: "logs/app.log"
+max_bytes: 10485760  # 10MB
+backup_count: 5
+
+# External logging systems configuration
+external_systems:
+  # ELK configuration (uncomment to enable)
+  # elk:
+  #   host: "localhost:9200"
+  #   index: "ai_backlog_logs"
+  #   username: "elastic"
+  #   password: "changeme"
+
+  # Splunk configuration (uncomment to enable)
+  # splunk:
+  #   host: "localhost"
+  #   port: 8089
+  #   username: "admin"
+  #   password: "changeme"
+  #   index: "main"
+  #   sourcetype: "_json"
+
+  # HTTP logging configuration (uncomment to enable)
+  # http:
+  #   url: "https://logs.example.com/api/logs"
+  #   headers:
+  #     Content-Type: "application/json"
+  #     Authorization: "Bearer token123"
+  #   timeout: 5
+
+
+
