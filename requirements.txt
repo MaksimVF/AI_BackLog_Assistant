@@ -12,7 +12,10 @@ weaviate-client
 rq
 redis
 python-dotenv
+
 hiredis
+watchdog
+
 
 pymupdf
 semantic-router[fastembed]

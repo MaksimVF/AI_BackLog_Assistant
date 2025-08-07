@@ -1,0 +1,35 @@
+
+
+# Sample configuration file for AI_BackLog_Assistant
+
+clickhouse:
+  host: "localhost"
+  port: 8443
+  username: "default"
+  password: ""
+  database: "ai_backlog_admin"
+  secure: true
+  ca_cert: null
+
+redis:
+  url: "redis://localhost:6379/0"
+
+kafka:
+  bootstrap_servers: "localhost:9092"
+  client_id: "ai-backlog-agent"
+  security_protocol: "PLAINTEXT"
+  sasl_mechanisms: null
+  sasl_username: null
+  sasl_password: null
+
+security:
+  secret_key: "your-secret-key-here"  # Change this in production!
+  algorithm: "HS256"
+  access_token_expire_minutes: 30
+  allowed_ips:
+    - "127.0.0.1"
+    - "::1"
+
+debug_mode: false
+log_level: "INFO"
+
