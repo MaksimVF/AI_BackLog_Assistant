@@ -1,0 +1,362 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - AI Backlog Assistant</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background-color: #4CAF50;
+            color: white;
+            padding: 15px 20px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+        .header h1 {
+            margin: 0;
+            display: inline;
+        }
+        .nav {
+            background-color: #333;
+            color: white;
+            padding: 10px 20px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+        .nav a {
+            color: white;
+            text-decoration: none;
+            margin-right: 15px;
+        }
+        .nav a:hover {
+            text-decoration: underline;
+        }
+        .content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .section {
+            margin-bottom: 30px;
+        }
+        .section h2 {
+            color: #4CAF50;
+            border-bottom: 2px solid #4CAF50;
+            padding-bottom: 5px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .btn {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn:hover {
+            background-color: #45a049;
+        }
+        .btn-danger {
+            background-color: #f44336;
+        }
+        .btn-danger:hover {
+            background-color: #d32f2f;
+        }
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        .table th, .table td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        .table th {
+            background-color: #f2f2f2;
+        }
+        .table tr:hover {
+            background-color: #f5f5f5;
+        }
+        .alert {
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+        .alert-success {
+            background-color: #dff0d8;
+            color: #3c763d;
+        }
+        .alert-error {
+            background-color: #f2dede;
+            color: #a94442;
+        }
+        .api-key-display {
+            font-family: monospace;
+            background-color: #f5f5f5;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Admin Panel</h1>
+        </div>
+
+        <div class="nav">
+            <a href="#llm-management">LLM Management</a>
+            <a href="#tariff-management">Tariff Management</a>
+            <a href="#payment-history">Payment History</a>
+            <a href="{{ url_for('logout') }}">Logout</a>
+        </div>
+
+        <div class="content">
+            {% if message %}
+                <div class="alert alert-{{ 'success' if message_type == 'success' else 'error' }}">
+                    {{ message }}
+                </div>
+            {% endif %}
+
+            <div class="section" id="llm-management">
+                <h2>LLM Provider Management</h2>
+
+                <h3>Add/Edit LLM Model</h3>
+                <form action="{{ url_for('admin.manage_llm') }}" method="post">
+                    <input type="hidden" name="action" value="add_edit_model">
+
+                    <div class="form-group">
+                        <label for="model_name">Model Name:</label>
+                        <input type="text" id="model_name" name="model_name" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="provider">Provider:</label>
+                        <select id="provider" name="provider" required>
+                            <option value="openai">OpenAI</option>
+                            <option value="anthropic">Anthropic</option>
+                            <option value="huggingface">HuggingFace</option>
+                            <option value="cohere">Cohere</option>
+                            <option value="google">Google</option>
+                            <option value="local">Local</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="api_key">API Key:</label>
+                        <input type="password" id="api_key" name="api_key">
+                        <small>Leave empty to keep existing key</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="api_url">API URL:</label>
+                        <input type="text" id="api_url" name="api_url">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="max_tokens">Max Tokens:</label>
+                        <input type="number" id="max_tokens" name="max_tokens" value="4096">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="temperature">Temperature (0-1):</label>
+                        <input type="number" step="0.1" id="temperature" name="temperature" value="0.7" min="0" max="1">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="is_default">Set as Default:</label>
+                        <input type="checkbox" id="is_default" name="is_default" value="true">
+                    </div>
+
+                    <button type="submit" class="btn">Save Model</button>
+                </form>
+
+                <h3>Current LLM Models</h3>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Model Name</th>
+                            <th>Provider</th>
+                            <th>Max Tokens</th>
+                            <th>Temperature</th>
+                            <th>Default</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for model in llm_models %}
+                        <tr>
+                            <td>{{ model.name }}</td>
+                            <td>{{ model.provider }}</td>
+                            <td>{{ model.max_tokens }}</td>
+                            <td>{{ model.temperature }}</td>
+                            <td>{{ 'Yes' if model.is_default else 'No' }}</td>
+                            <td>
+                                <form action="{{ url_for('admin.manage_llm') }}" method="post" style="display:inline;">
+                                    <input type="hidden" name="action" value="delete_model">
+                                    <input type="hidden" name="model_name" value="{{ model.name }}">
+                                    <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure?')">Delete</button>
+                                </form>
+                                <form action="{{ url_for('admin.manage_llm') }}" method="post" style="display:inline;">
+                                    <input type="hidden" name="action" value="set_default">
+                                    <input type="hidden" name="model_name" value="{{ model.name }}">
+                                    <button type="submit" class="btn">Set Default</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="section" id="tariff-management">
+                <h2>Tariff Plan Management</h2>
+
+                <h3>Add/Edit Tariff Plan</h3>
+                <form action="{{ url_for('admin.manage_tariffs') }}" method="post">
+                    <input type="hidden" name="action" value="add_edit_plan">
+
+                    <div class="form-group">
+                        <label for="plan_name">Plan Name:</label>
+                        <input type="text" id="plan_name" name="plan_name" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="price_per_month">Price per Month (RUB):</label>
+                        <input type="number" id="price_per_month" name="price_per_month" step="0.01" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="included_limits">Included Limits (JSON):</label>
+                        <textarea id="included_limits" name="included_limits" rows="4" placeholder='{"feature_name": limit, "another_feature": limit}'></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="discounts">Discounts (JSON):</label>
+                        <textarea id="discounts" name="discounts" rows="2" placeholder='{"PAYG": 0.1}'></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="access_features">Access Features (comma-separated):</label>
+                        <input type="text" id="access_features" name="access_features">
+                    </div>
+
+                    <button type="submit" class="btn">Save Plan</button>
+                </form>
+
+                <h3>Current Tariff Plans</h3>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Plan Name</th>
+                            <th>Price (RUB)</th>
+                            <th>Features</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for plan in tariff_plans %}
+                        <tr>
+                            <td>{{ plan.name }}</td>
+                            <td>{{ plan.price_per_month }}</td>
+                            <td>{{ plan.access_features|join(', ') }}</td>
+                            <td>
+                                <form action="{{ url_for('admin.manage_tariffs') }}" method="post" style="display:inline;">
+                                    <input type="hidden" name="action" value="delete_plan">
+                                    <input type="hidden" name="plan_id" value="{{ plan.id }}">
+                                    <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure?')">Delete</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="section" id="payment-history">
+                <h2>Payment History</h2>
+
+                <h3>Manual Transaction</h3>
+                <form action="{{ url_for('admin.manage_payments') }}" method="post">
+                    <input type="hidden" name="action" value="manual_transaction">
+
+                    <div class="form-group">
+                        <label for="organization_id">Organization ID:</label>
+                        <input type="text" id="organization_id" name="organization_id" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="amount">Amount (RUB):</label>
+                        <input type="number" id="amount" name="amount" step="0.01" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="description">Description:</label>
+                        <input type="text" id="description" name="description" placeholder="Bonus, compensation, etc.">
+                    </div>
+
+                    <button type="submit" class="btn">Add Funds</button>
+                </form>
+
+                <h3>Recent Transactions</h3>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Organization ID</th>
+                            <th>Amount (RUB)</th>
+                            <th>Type</th>
+                            <th>Timestamp</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for transaction in transactions %}
+                        <tr>
+                            <td>{{ transaction.organization_id }}</td>
+                            <td>{{ transaction.amount }}</td>
+                            <td>{{ transaction.transaction_type }}</td>
+                            <td>{{ transaction.timestamp }}</td>
+                            <td>{{ transaction.description }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

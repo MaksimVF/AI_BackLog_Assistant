@@ -130,6 +130,10 @@ app.register_blueprint(team_test_bp)
 from .api_gateway import api_gateway_bp
 app.register_blueprint(api_gateway_bp)
 
+# Register Admin blueprint
+from .admin_routes import admin_bp
+app.register_blueprint(admin_bp)
+
 # Import application models
 from .models import User, Organization, OrganizationMember, ActiveContext
 
