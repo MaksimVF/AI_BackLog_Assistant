@@ -320,6 +320,21 @@ class MonitoringAgent(BaseAgent):
         self.logger.debug(f"Checking component: {url}")
         return "ok"  # or "unreachable"
 
+    def check_specific_process(self, process_name: str) -> Dict[str, Any]:
+        """Check if a specific process is running."""
+        for proc in psutil.process_iter(['pid', 'name']):
+            if process_name.lower() in proc.info['name'].lower():
+                return {
+                    "status": "running",
+                    "pid": proc.info['pid'],
+                    "name": proc.info['name']
+                }
+
+        return {
+            "status": "not_found",
+            "process_name": process_name
+        }
+
     def report(self) -> dict:
         """Generate a final system status report."""
         return {

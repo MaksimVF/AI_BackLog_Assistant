@@ -12,6 +12,7 @@ from system_admin.notification_agent import NotificationAgent
 from system_admin.security_agent import SecurityAgent
 from system_admin.diagnostics_agent import DiagnosticsAgent
 from system_admin.monitoring_agent import MonitoringAgent
+from system_admin.self_healing_agent import SelfHealingAgent
 
 class SuperAdminAgent(BaseAgent):
     def __init__(self):
@@ -24,6 +25,7 @@ class SuperAdminAgent(BaseAgent):
         self.security = SecurityAgent(notifier=self.notifier)
         self.diagnostics = DiagnosticsAgent(notifier=self.notifier)
         self.monitor = MonitoringAgent()
+        self.self_healing = SelfHealingAgent()
 
     def health_check(self) -> dict:
         """Get a comprehensive health report"""
@@ -62,6 +64,32 @@ class SuperAdminAgent(BaseAgent):
             return self.logger.filter_logs(level)
         return self.logger.export_logs()
 
+    def check_self_healing(self) -> dict:
+        """Check if self-healing actions are needed"""
+        return self.self_healing.check_system_health()
+
+    def perform_self_healing(self) -> dict:
+        """Perform automatic self-healing actions"""
+        health_check = self.check_self_healing()
+        actions = health_check.get('actions_needed', [])
+        results = self.self_healing.perform_self_healing(actions)
+        return {
+            'health_check': health_check,
+            'actions_taken': results
+        }
+
+    def restart_service(self, service_name: str) -> dict:
+        """Restart a specific service"""
+        return self.self_healing.restart_service(service_name)
+
+    def trigger_failover(self, service_name: str) -> dict:
+        """Trigger failover for a critical service"""
+        return self.self_healing.trigger_failover(service_name)
+
+    def auto_scale_resources(self, resource_type: str, amount: int) -> dict:
+        """Automatically scale resources"""
+        return self.self_healing.auto_scale_resources(resource_type, amount)
+
 if __name__ == "__main__":
     # Example usage
     admin = SuperAdminAgent()
@@ -91,4 +119,31 @@ if __name__ == "__main__":
     # Test logs
     logs = admin.get_logs()
     print(f"Collected {len(logs)} log entries")
+
+    # Test self-healing capabilities
+    print("\n=== Testing Self-Healing Capabilities ===")
+
+    # Check if self-healing is needed
+    healing_check = admin.check_self_healing()
+    print("Self-Healing Check:", healing_check)
+
+    # Perform automatic self-healing
+    if healing_check.get('actions_needed'):
+        print(f"Actions needed: {len(healing_check['actions_needed'])}")
+        healing_results = admin.perform_self_healing()
+        print("Self-Healing Results:", healing_results)
+    else:
+        print("No self-healing actions needed at this time")
+
+    # Test service restart
+    service_result = admin.restart_service("test_service")
+    print("Service Restart Result:", service_result)
+
+    # Test failover
+    failover_result = admin.trigger_failover("database_service")
+    print("Failover Result:", failover_result)
+
+    # Test auto-scaling
+    scale_result = admin.auto_scale_resources("memory", 4)
+    print("Auto-Scale Result:", scale_result)
 
