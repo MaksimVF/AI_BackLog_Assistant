@@ -9,7 +9,7 @@
 This Telegram bot provides a convenient interface for users to interact with the AI Backlog Assistant system. Users can:
 
 - Get system status and information
-- Upload documents for analysis
+- Upload documents, videos, and audio files for analysis
 - Receive recommendations and notifications
 - Manage notification settings
 
@@ -20,16 +20,22 @@ This Telegram bot provides a convenient interface for users to interact with the
 - `/start` - Show welcome message with available commands
 - `/help` - Show help information
 - `/status` - Get current system status
-- `/upload` - Upload a document for analysis
+- `/upload` - Upload files (documents, videos, audio) for analysis
 - `/notifications` - Manage notification settings
 - `/notifications_enable` - Enable notifications
 - `/notifications_disable` - Disable notifications
 
-### Document Upload
+### File Upload
 
-Users can upload documents in various formats (PDF, DOCX, TXT, CSV) for analysis. The bot will:
+Users can upload files in various formats for analysis:
 
-1. Receive the document
+- **Documents**: PDF, DOCX, TXT, CSV
+- **Videos**: MP4, AVI, MOV
+- **Audio**: MP3, WAV, OGG
+
+The bot will:
+
+1. Receive the file
 2. Send it for processing through the pipeline system
 3. Return recommendations and analysis results
 
