@@ -1,0 +1,42 @@
+
+
+
+
+version: '3.8'
+
+services:
+  admin-backend:
+    build:
+      context: ./web/admin/backend
+    ports:
+      - "4000:4000"
+    environment:
+      - ENV=development
+    volumes:
+      - ./web/admin/backend:/app
+      - ../../agents:/app/agents
+      - ../../security:/app/security
+      - ../../models:/app/models
+    depends_on:
+      - admin-frontend
+
+  admin-frontend:
+    build:
+      context: ./web/admin
+    ports:
+      - "3001:4000"
+    environment:
+      - REACT_APP_API_URL=http://localhost:4000
+    volumes:
+      - ./web/admin:/app
+      - /app/node_modules
+    depends_on:
+      - admin-backend
+
+networks:
+  default:
+    name: ai_backlog_network
+    driver: bridge
+
+
+
