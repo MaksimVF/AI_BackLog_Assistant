@@ -13,12 +13,12 @@ backup_count: 5
 
 # External logging systems configuration
 external_systems:
-  # ELK configuration (uncomment to enable)
-  # elk:
-  #   host: "localhost:9200"
-  #   index: "ai_backlog_logs"
-  #   username: "elastic"
-  #   password: "changeme"
+  # ELK configuration (enabled)
+  elk:
+    host: "localhost:9200"
+    index: "ai_backlog_logs"
+    username: "elastic"
+    password: "changeme"
 
   # Splunk configuration (uncomment to enable)
   # splunk:
