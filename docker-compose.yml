@@ -1,0 +1,79 @@
+
+
+
+
+
+version: '3.8'
+
+services:
+  # User Interface Services
+  user-backend:
+    build:
+      context: ./web/backend
+    ports:
+      - "8000:8000"
+    environment:
+      - ENV=development
+    volumes:
+      - ./web/backend:/app
+      - ../../agents:/app/agents
+      - ../../security:/app/security
+      - ../../models:/app/models
+
+  user-frontend:
+    build:
+      context: ./web/frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - REACT_APP_API_URL=http://localhost:8000
+    volumes:
+      - ./web/frontend:/app
+      - /app/node_modules
+
+  # Admin Interface Services
+  admin-backend:
+    build:
+      context: ./web/admin/backend
+    ports:
+      - "4000:4000"
+    environment:
+      - ENV=development
+    volumes:
+      - ./web/admin/backend:/app
+      - ../../agents:/app/agents
+      - ../../security:/app/security
+      - ../../models:/app/models
+
+  admin-frontend:
+    build:
+      context: ./web/admin
+    ports:
+      - "3001:4000"
+    environment:
+      - REACT_APP_API_URL=http://localhost:4000
+    volumes:
+      - ./web/admin:/app
+      - /app/node_modules
+
+  # Nginx Reverse Proxy
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - user-backend
+      - user-frontend
+      - admin-backend
+      - admin-frontend
+
+networks:
+  default:
+    name: ai_backlog_network
+    driver: bridge
+
+
+
+
