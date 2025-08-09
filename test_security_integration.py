@@ -143,19 +143,23 @@ def test_api_security():
     api_key = security_integration.security_system.generate_api_key("test_service", SecurityLevel.HIGH)
     print(f"Generated API key: {api_key}")
 
-    @security_integration.secure_api_endpoint(required_security_level=SecurityLevel.MEDIUM)
+    # Create a secured endpoint
     def test_endpoint(data, api_key=None, token=None):
         return {"status": "success", "data": data, "api_key": api_key}
 
+    secured_endpoint = security_integration.secure_api_endpoint(
+        test_endpoint, required_security_level=SecurityLevel.MEDIUM
+    )
+
     try:
-        result = test_endpoint({"test": "data"}, api_key=api_key)
+        result = secured_endpoint({"test": "data"}, api_key=api_key)
         print(f"API call with valid key: {result['status']}")
     except ValueError as e:
         print(f"API call with valid key failed: {e}")
 
     # Test with invalid API key
     try:
-        result = test_endpoint({"test": "data"}, api_key="invalid_key")
+        result = secured_endpoint({"test": "data"}, api_key="invalid_key")
         print(f"❌ API call with invalid key should have failed: {result}")
     except ValueError as e:
         print(f"✓ API call with invalid key correctly failed: {e}")
