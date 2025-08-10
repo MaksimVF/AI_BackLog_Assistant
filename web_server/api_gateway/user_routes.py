@@ -9,7 +9,7 @@ User Management Routes for API Gateway
 
 import uuid
 from flask import request, jsonify, current_app
-from . import api_gateway_bp
+from .gateway import api_gateway_bp
 from .auth_middleware import token_required, generate_token
 from ..app import db
 from ..models import User, Organization, OrganizationMember, Document, DocumentAnalysis

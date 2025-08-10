@@ -6,7 +6,7 @@ Authentication Routes for API Gateway
 """
 
 from flask import request, jsonify
-from . import api_gateway_bp
+from .gateway import api_gateway_bp
 from .auth_middleware import generate_token, token_required
 from werkzeug.security import check_password_hash
 from ..app import db

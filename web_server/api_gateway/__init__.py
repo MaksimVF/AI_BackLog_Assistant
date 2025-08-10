@@ -1,12 +1,8 @@
-
 """
 API Gateway Module for AI Backlog Assistant
 """
 
-from flask import Blueprint
-
-# Create API Gateway Blueprint
-api_gateway_bp = Blueprint('api_gateway', __name__)
+from .gateway import api_gateway_bp
 
 # Import routes to register them with the blueprint
 from . import auth_routes
