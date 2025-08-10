@@ -13,8 +13,7 @@ app = FastAPI(
 
 # Include routers
 app.include_router(auth_router, prefix="/auth", tags=["auth"])
-app.include_router(admin_router, prefix="/admin", tags=["admin"])
-
+app.include_router(admin_router)
 @app.get("/")
 async def root():
     """Root endpoint"""
