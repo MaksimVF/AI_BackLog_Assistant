@@ -7,7 +7,7 @@ Analysis Routes for API Gateway
 
 import json
 from flask import request, jsonify, current_app
-from . import api_gateway_bp
+from .gateway import api_gateway_bp
 from .auth_middleware import token_required
 from ..app import db
 from web_server.models import Document, DocumentAnalysis
