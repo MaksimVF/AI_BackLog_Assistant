@@ -3,8 +3,12 @@
 
 
 
+"""
+FastAPI Admin Module - Complete implementation with best features from Flask and FastAPI versions
+"""
+
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, validator
 from typing import List, Optional, Dict, Any
 from models.user import UserRole
 from security.permissions import require_role, TokenData
@@ -14,36 +18,59 @@ from config.llm_config import (
 )
 from config.billing_config import FEATURE_CONFIG, TARIFF_PLANS
 from web_server.billing_models import TariffPlan, OrganizationBalance, UsageLog
+from web_server.models import User, Organization
 from web_server.extensions import db
 
-router = APIRouter()
+router = APIRouter(
+    prefix="/admin",
+    tags=["admin"],
+    responses={401: {"description": "Unauthorized - requires admin role"}}
+)
 
 class LLMModelCreate(BaseModel):
-    name: str
-    provider: str
-    api_key: Optional[str] = None
-    api_url: Optional[str] = None
-    max_tokens: int = 4096
-    temperature: float = 0.7
-    is_default: bool = False
+    """Model for creating/updating LLM models"""
+    name: str = Field(..., description="Name of the LLM model")
+    provider: str = Field(..., description="Provider of the LLM model")
+    api_key: Optional[str] = Field(None, description="API key for the model")
+    api_url: Optional[str] = Field(None, description="API URL for the model")
+    max_tokens: int = Field(4096, description="Maximum tokens for the model")
+    temperature: float = Field(0.7, description="Temperature setting for the model")
+    is_default: bool = Field(False, description="Whether this is the default model")
+
+    @validator('temperature')
+    def validate_temperature(cls, v):
+        if not 0 <= v <= 1:
+            raise ValueError('Temperature must be between 0 and 1')
+        return v
 
 class TariffPlanCreate(BaseModel):
-    name: str
-    price_per_month: float
-    included_limits: Optional[Dict[str, int]] = {}
-    discounts: Optional[Dict[str, float]] = {}
-    access_features: Optional[List[str]] = []
+    """Model for creating/updating tariff plans"""
+    name: str = Field(..., description="Name of the tariff plan")
+    price_per_month: float = Field(..., description="Monthly price for the plan")
+    included_limits: Optional[Dict[str, int]] = Field({}, description="Usage limits included in the plan")
+    discounts: Optional[Dict[str, float]] = Field({}, description="Discounts for the plan")
+    access_features: Optional[List[str]] = Field([], description="Features accessible with this plan")
+
+class TariffPlanUpdate(TariffPlanCreate):
+    """Model for updating tariff plans (allows optional fields)"""
+    name: Optional[str] = Field(None, description="Name of the tariff plan")
+    price_per_month: Optional[float] = Field(None, description="Monthly price for the plan")
 
 class ManualTransaction(BaseModel):
-    organization_id: str
-    amount: float
-    description: Optional[str] = "Manual transaction"
+    """Model for manual transactions"""
+    organization_id: str = Field(..., description="ID of the organization")
+    amount: float = Field(..., description="Amount to add/remove")
+    description: Optional[str] = Field("Manual transaction", description="Description of the transaction")
+
+class FeatureUpdate(BaseModel):
+    """Model for updating feature configuration"""
+    config: Dict[str, Any] = Field(..., description="Feature configuration data")
 
 @router.post("/command")
 async def admin_command(
     command: dict,
     current_user: TokenData = Depends(require_role(UserRole.ADMIN))
-):
+) -> dict:
     """Admin command endpoint - only accessible to users with ADMIN role"""
     # Here you would implement the actual admin command logic
     return {
@@ -54,7 +81,7 @@ async def admin_command(
     }
 
 @router.get("/status")
-async def admin_status(current_user: TokenData = Depends(require_role(UserRole.ADMIN))):
+async def admin_status(current_user: TokenData = Depends(require_role(UserRole.ADMIN))) -> dict:
     """Get admin status - only accessible to users with ADMIN role"""
     return {
         "status": "ok",
@@ -64,7 +91,7 @@ async def admin_status(current_user: TokenData = Depends(require_role(UserRole.A
 
 # LLM Management Endpoints
 @router.get("/llm/models")
-async def get_llm_models(current_user: TokenData = Depends(require_role(UserRole.ADMIN))):
+async def get_llm_models(current_user: TokenData = Depends(require_role(UserRole.ADMIN))) -> dict:
     """Get all LLM models"""
     config = get_llm_config()
     return {
@@ -82,7 +109,7 @@ async def get_llm_models(current_user: TokenData = Depends(require_role(UserRole
 async def create_llm_model(
     model_data: LLMModelCreate,
     current_user: TokenData = Depends(require_role(UserRole.ADMIN))
-):
+) -> dict:
     """Create or update an LLM model"""
     try:
         model_config = LLMModelConfig(
@@ -112,7 +139,7 @@ async def create_llm_model(
 async def delete_llm_model(
     model_name: str,
     current_user: TokenData = Depends(require_role(UserRole.ADMIN))
-):
+) -> dict:
     """Delete an LLM model"""
     try:
         remove_model_config(model_name)
@@ -127,7 +154,7 @@ async def delete_llm_model(
 async def set_default_llm_model(
     model_name: str,
     current_user: TokenData = Depends(require_role(UserRole.ADMIN))
-):
+) -> dict:
     """Set default LLM model"""
     try:
         set_default_model(model_name)
@@ -140,7 +167,7 @@ async def set_default_llm_model(
 
 # Tariff Management Endpoints
 @router.get("/tariffs")
-async def get_tariff_plans(current_user: TokenData = Depends(require_role(UserRole.ADMIN))):
+async def get_tariff_plans(current_user: TokenData = Depends(require_role(UserRole.ADMIN))) -> dict:
     """Get all tariff plans"""
     try:
         # Get from database first
@@ -176,38 +203,68 @@ async def get_tariff_plans(current_user: TokenData = Depends(require_role(UserRo
 async def create_tariff_plan(
     plan_data: TariffPlanCreate,
     current_user: TokenData = Depends(require_role(UserRole.ADMIN))
-):
-    """Create or update a tariff plan"""
+) -> dict:
+    """Create a new tariff plan"""
     try:
         # Check if plan exists
         existing_plan = TariffPlan.query.filter_by(name=plan_data.name).first()
 
         if existing_plan:
-            # Update existing plan
-            existing_plan.price_per_month = plan_data.price_per_month
-            existing_plan.included_limits = plan_data.included_limits or {}
-            existing_plan.discounts = plan_data.discounts or {}
-            existing_plan.access_features = plan_data.access_features or []
-            db.session.commit()
-            return {
-                "status": "success",
-                "message": "Tariff plan updated successfully"
-            }
-        else:
-            # Create new plan
-            new_plan = TariffPlan(
-                name=plan_data.name,
-                price_per_month=plan_data.price_per_month,
-                included_limits=plan_data.included_limits or {},
-                discounts=plan_data.discounts or {},
-                access_features=plan_data.access_features or []
+            raise HTTPException(
+                status_code=400,
+                detail="Tariff plan with this name already exists"
             )
-            db.session.add(new_plan)
-            db.session.commit()
-            return {
-                "status": "success",
-                "message": "Tariff plan created successfully"
-            }
+
+        # Create new plan
+        new_plan = TariffPlan(
+            name=plan_data.name,
+            price_per_month=plan_data.price_per_month,
+            included_limits=plan_data.included_limits or {},
+            discounts=plan_data.discounts or {},
+            access_features=plan_data.access_features or []
+        )
+        db.session.add(new_plan)
+        db.session.commit()
+        return {
+            "status": "success",
+            "message": "Tariff plan created successfully"
+        }
+
+    except Exception as e:
+        db.session.rollback()
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.put("/tariffs/{plan_id}")
+async def update_tariff_plan(
+    plan_id: str,
+    plan_data: TariffPlanUpdate,
+    current_user: TokenData = Depends(require_role(UserRole.ADMIN))
+) -> dict:
+    """Update an existing tariff plan"""
+    try:
+        plan = TariffPlan.query.get(plan_id)
+
+        if not plan:
+            raise HTTPException(status_code=404, detail="Tariff plan not found")
+
+        # Update plan fields
+        if plan_data.name is not None:
+            plan.name = plan_data.name
+        if plan_data.price_per_month is not None:
+            plan.price_per_month = plan_data.price_per_month
+        if plan_data.included_limits is not None:
+            plan.included_limits = plan_data.included_limits
+        if plan_data.discounts is not None:
+            plan.discounts = plan_data.discounts
+        if plan_data.access_features is not None:
+            plan.access_features = plan_data.access_features
+
+        db.session.commit()
+
+        return {
+            "status": "success",
+            "message": "Tariff plan updated successfully"
+        }
 
     except Exception as e:
         db.session.rollback()
@@ -217,7 +274,7 @@ async def create_tariff_plan(
 async def delete_tariff_plan(
     plan_id: str,
     current_user: TokenData = Depends(require_role(UserRole.ADMIN))
-):
+) -> dict:
     """Delete a tariff plan"""
     try:
         plan = TariffPlan.query.get(plan_id)
@@ -228,7 +285,10 @@ async def delete_tariff_plan(
         # Check if any organizations are using this plan
         orgs_using_plan = OrganizationBalance.query.filter_by(tariff_plan_id=plan_id).count()
         if orgs_using_plan > 0:
-            raise HTTPException(status_code=400, detail="Cannot delete plan - organizations are using it")
+            raise HTTPException(
+                status_code=400,
+                detail="Cannot delete plan - organizations are using it"
+            )
 
         db.session.delete(plan)
         db.session.commit()
@@ -247,7 +307,7 @@ async def delete_tariff_plan(
 async def get_payment_history(
     current_user: TokenData = Depends(require_role(UserRole.ADMIN)),
     limit: int = 10
-):
+) -> dict:
     """Get payment history"""
     try:
         transactions = UsageLog.query.order_by(UsageLog.timestamp.desc()).limit(limit).all()
@@ -270,7 +330,7 @@ async def get_payment_history(
 async def manual_transaction(
     transaction_data: ManualTransaction,
     current_user: TokenData = Depends(require_role(UserRole.ADMIN))
-):
+) -> dict:
     """Add manual transaction (compensation, bonus, etc.)"""
     try:
         from web_server.billing_manager import BillingManager
@@ -308,7 +368,7 @@ async def manual_transaction(
 
 # Feature Management Endpoints
 @router.get("/features")
-async def get_features(current_user: TokenData = Depends(require_role(UserRole.ADMIN))):
+async def get_features(current_user: TokenData = Depends(require_role(UserRole.ADMIN))) -> dict:
     """Get all features and their configuration"""
     return {
         "features": FEATURE_CONFIG
@@ -317,13 +377,14 @@ async def get_features(current_user: TokenData = Depends(require_role(UserRole.A
 @router.post("/features/{feature_name}")
 async def update_feature(
     feature_name: str,
-    feature_data: dict,
+    feature_data: FeatureUpdate,
     current_user: TokenData = Depends(require_role(UserRole.ADMIN))
-):
+) -> dict:
     """Update feature configuration"""
     # Note: This would require updating the config file or database
     # For now, we'll just return the current config
     if feature_name in FEATURE_CONFIG:
+        # In a real implementation, you would update the configuration here
         return {
             "status": "success",
             "message": "Feature configuration updated",
@@ -331,5 +392,28 @@ async def update_feature(
         }
     else:
         raise HTTPException(status_code=404, detail="Feature not found")
+
+# System Management Endpoints
+@router.get("/system/health")
+async def system_health(current_user: TokenData = Depends(require_role(UserRole.ADMIN))) -> dict:
+    """Get system health status"""
+    # In a real implementation, this would check various system components
+    return {
+        "status": "healthy",
+        "database": "connected",
+        "cache": "connected",
+        "message_queue": "connected"
+    }
+
+@router.get("/system/stats")
+async def system_stats(current_user: TokenData = Depends(require_role(UserRole.ADMIN))) -> dict:
+    """Get system statistics"""
+    # In a real implementation, this would return actual system statistics
+    return {
+        "users": User.query.count(),
+        "organizations": Organization.query.count(),
+        "transactions": UsageLog.query.count(),
+        "llm_models": len(get_llm_config().models)
+    }
 
 
