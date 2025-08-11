@@ -120,17 +120,21 @@ class EntityExtractor:
 
     def extract_with_spacy(self, text: str) -> Dict[str, List[str]]:
         """
-        Extract entities using spaCy (future implementation).
+        Extract entities using spaCy.
 
-        Requires spaCy with ru_core_news_lg model.
+        Uses ru_core_news_lg or ru_core_news_sm model.
 
         :param text: input text
         :return: dictionary with entity types and values
         """
         try:
             import spacy
-            # Load Russian model (would need to be installed)
-            nlp = spacy.load("ru_core_news_lg")
+            # Try to load large model first, fallback to small model
+            try:
+                nlp = spacy.load("ru_core_news_lg")
+            except OSError:
+                nlp = spacy.load("ru_core_news_sm")
+
             doc = nlp(text)
 
             entities = {}
@@ -141,7 +145,7 @@ class EntityExtractor:
 
             return entities
 
-        except ImportError:
+        except (ImportError, OSError):
             # Fallback to basic extraction if spaCy not available
             return self.extract(text)
 
