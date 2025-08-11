@@ -3,8 +3,8 @@
 
 
 
-# TODO: Import LLM client when available
-# from core.llm.llm_client import llm_chat
+from typing import List
+from agents.llm_client import chat_completion
 
 class SemanticTaggingAgent:
     """
@@ -25,23 +25,42 @@ class SemanticTaggingAgent:
             "Верни результат в виде списка тегов через запятую."
         )
 
-    def extract_tags(self, text: str) -> list:
+    def extract_tags(self, text: str, use_llm: bool = True, model_name: str = None) -> list:
         """
         Extract semantic tags from the document text.
 
         Args:
             text: The document text to analyze
+            use_llm: Whether to use LLM for tagging (True) or fallback to keyword-based (False)
+            model_name: Name of the model to use (None for default model)
 
         Returns:
             A list of extracted tags
         """
-        # TODO: Implement LLM-based semantic tagging when dependencies are available
-        # user_prompt = f"Вот содержимое документа:\n{text[:3000]}\n\nВыдели ключевые теги:"
-        # response = llm_chat(self.system_prompt, user_prompt)
-        # tags = [tag.strip().lower() for tag in response.split(',') if tag.strip()]
-        # return tags
+        if use_llm:
+            try:
+                # Prepare messages for LLM
+                messages = [
+                    {"role": "system", "content": self.system_prompt},
+                    {"role": "user", "content": f"Вот содержимое документа:\n{text[:3000]}\n\nВыдели ключевые теги:"}
+                ]
 
-        # For now, use simple keyword extraction as placeholder
+                # Call LLM for tag extraction
+                response = chat_completion(messages, model_name=model_name)
+
+                # Parse tags from response
+                tags = [tag.strip().lower() for tag in response.split(',') if tag.strip()]
+                return tags
+
+            except Exception as e:
+                # Fallback to keyword-based tagging if LLM fails
+                print(f"LLM tagging failed, falling back to keyword-based: {e}")
+                return self._keyword_based_tagging(text)
+        else:
+            return self._keyword_based_tagging(text)
+
+    def _keyword_based_tagging(self, text: str) -> List[str]:
+        """Fallback keyword-based tagging method."""
         text_lower = text.lower()
         words = text_lower.split()
 
