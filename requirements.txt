@@ -34,4 +34,9 @@ python-jose[cryptography]
 passlib[bcrypt]
 python-multipart
 
+# LLM provider dependencies
+openai
+anthropic
+requests
+
 

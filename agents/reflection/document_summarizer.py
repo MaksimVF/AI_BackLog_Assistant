@@ -4,8 +4,8 @@
 
 
 
-# TODO: Import LLM client when available
-# from core.llm_client import chat_completion
+from typing import Dict, Any, List
+from agents.llm_client import chat_completion
 
 class DocumentSummarizer:
     """
@@ -14,16 +14,45 @@ class DocumentSummarizer:
 
     def __init__(self):
         self.name = "DocumentSummarizer"
+        self.system_prompt = (
+            "Ты эксперт по созданию кратких резюме документов. "
+            "На основе предоставленного текста создай краткое резюме, сохраняя ключевые факты и основной смысл. "
+            "Резюме должно быть на том же языке, что и оригинальный текст, и составлять около 20-25% от исходной длины."
+        )
 
-    def generate_summary(self, text: str) -> dict:
+    def generate_summary(self, text: str, model_name: str = None) -> dict:
         """
         Создает краткое резюме текста.
+
+        Args:
+            text: Исходный текст для резюмирования
+            model_name: Название модели для использования (None для модели по умолчанию)
+
+        Returns:
+            Словарь с результатом резюмирования
         """
-        # TODO: Implement LLM-based summary generation when dependencies are available
-        # For now, return a placeholder result
-        return {
-            "summary": "Генерация резюме требует настройки LLM. Пожалуйста, добавьте зависимость core.llm_client."
-        }
+        try:
+            # Prepare messages for LLM
+            messages = [
+                {"role": "system", "content": self.system_prompt},
+                {"role": "user", "content": f"Текст для резюмирования:\n\n{text[:8000]}"}  # Limit to 8000 chars
+            ]
+
+            # Call LLM for summary generation
+            response = chat_completion(messages, model_name=model_name)
+
+            return {
+                "summary": response.strip(),
+                "model_used": model_name or "default",
+                "success": True
+            }
+
+        except Exception as e:
+            return {
+                "summary": f"Ошибка при генерации резюме: {str(e)}",
+                "model_used": model_name or "default",
+                "success": False
+            }
 
 
 
