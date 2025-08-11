@@ -4,10 +4,8 @@
 
 
 from typing import List, Dict, Tuple
-
-# TODO: Import spaCy when available
-# import spacy
-# import networkx as nx
+import spacy
+import networkx as nx
 
 class KnowledgeGraphAgent:
     """
@@ -19,10 +17,15 @@ class KnowledgeGraphAgent:
     """
 
     def __init__(self):
-        # TODO: Initialize spaCy model when available
-        # self.nlp = spacy.load("en_core_web_sm")  # при необходимости сменим на ru_core_news_md или другую
-        # self.graph = nx.DiGraph()
-        pass
+        # Initialize spaCy model
+        try:
+            self.nlp = spacy.load("ru_core_news_lg")  # Use large model if available
+        except OSError:
+            try:
+                self.nlp = spacy.load("ru_core_news_sm")  # Fallback to small model
+            except OSError:
+                raise ImportError("Russian spaCy model not found. Please install with: python -m spacy download ru_core_news_sm")
+        self.graph = nx.DiGraph()
 
     def extract_entities_and_relations(self, text: str) -> Tuple[List[str], List[Tuple[str, str, str]]]:
         """
@@ -34,32 +37,22 @@ class KnowledgeGraphAgent:
         Returns:
             Кортеж: (список сущностей, список триплетов отношений).
         """
-        # TODO: Implement entity and relation extraction when spaCy is available
-        # doc = self.nlp(text)
-        # entities = list({ent.text for ent in doc.ents})
-        #
-        # relations = []
-        # for sent in doc.sents:
-        #     subject, verb, obj = None, None, None
-        #     for token in sent:
-        #         if token.dep_ in ("nsubj", "nsubjpass"):
-        #             subject = token.text
-        #         elif token.dep_ == "ROOT":
-        #             verb = token.text
-        #         elif token.dep_ in ("dobj", "pobj"):
-        #             obj = token.text
-        #     if subject and verb and obj:
-        #         relations.append((subject, verb, obj))
-        #
-        # return entities, relations
+        doc = self.nlp(text)
+        entities = list({ent.text for ent in doc.ents})
 
-        # For now, return placeholder results
-        entities = ["ООО Пример", "Иванов", "Договор", "Москва"]
-        relations = [
-            ("ООО Пример", "заключает", "Договор"),
-            ("Иванов", "подписывает", "Договор"),
-            ("Договор", "действует в", "Москва")
-        ]
+        relations = []
+        for sent in doc.sents:
+            subject, verb, obj = None, None, None
+            for token in sent:
+                if token.dep_ in ("nsubj", "nsubjpass"):
+                    subject = token.text
+                elif token.dep_ == "ROOT":
+                    verb = token.text
+                elif token.dep_ in ("obj", "dobj", "pobj"):  # Added 'obj' for Russian
+                    obj = token.text
+            if subject and verb and obj:
+                relations.append((subject, verb, obj))
+
         return entities, relations
 
     def build_graph(self, text: str) -> Dict:
@@ -74,19 +67,20 @@ class KnowledgeGraphAgent:
         """
         entities, relations = self.extract_entities_and_relations(text)
 
-        # TODO: Build actual graph when networkx is available
-        # for entity in entities:
-        #     self.graph.add_node(entity)
-        #
-        # for subj, verb, obj in relations:
-        #     self.graph.add_edge(subj, obj, label=verb)
-        #
-        # return self.graph
+        # Clear previous graph
+        self.graph.clear()
 
-        # For now, return a simple dictionary representation
+        # Add nodes and edges
+        for entity in entities:
+            self.graph.add_node(entity)
+
+        for subj, verb, obj in relations:
+            self.graph.add_edge(subj, obj, label=verb)
+
+        # Convert to dictionary representation
         return {
-            "entities": entities,
-            "relations": relations
+            "entities": list(self.graph.nodes()),
+            "relations": [(u, self.graph.edges[u, v]["label"], v) for u, v in self.graph.edges()]
         }
 
 

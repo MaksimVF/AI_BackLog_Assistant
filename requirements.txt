@@ -12,6 +12,8 @@ weaviate-client
 rq
 redis
 python-dotenv
+spacy
+networkx
 
 hiredis
 watchdog
