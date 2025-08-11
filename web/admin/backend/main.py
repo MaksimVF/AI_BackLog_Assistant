@@ -19,6 +19,8 @@ from pydantic import BaseModel
 from agents.super_admin_agent import SuperAdminAgent
 from security.permissions import require_role, TokenData
 from models.user import UserRole
+from config.llm_config import get_available_models, get_llm_config
+from config.agent_config import get_agent_registry, AgentConfig, list_agents
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -66,6 +68,22 @@ class Alert(BaseModel):
 class ConfigUpdate(BaseModel):
     parameter: str
     value: Any
+
+class AgentInfo(BaseModel):
+    name: str
+    description: str
+    default_model: Optional[str]
+    allowed_models: List[str]
+    enabled: bool
+
+class AgentAssignment(BaseModel):
+    agent_name: str
+    model_name: str
+
+class LLMModelInfo(BaseModel):
+    name: str
+    provider: str
+    is_default: bool
 
 # WebSocket manager for real-time updates
 class WebSocketManager:
@@ -262,6 +280,85 @@ async def update_config(
     except Exception as e:
         logging.error(f"Failed to update configuration: {e}")
         raise HTTPException(status_code=500, detail="Failed to update configuration")
+
+@app.get("/api/admin/agents", response_model=List[AgentInfo])
+async def get_agents(current_user: TokenData = Depends(require_role(UserRole.ADMIN))):
+    """Get list of agents and their configurations"""
+    try:
+        agent_registry = get_agent_registry()
+        agents = []
+
+        for agent_name in agent_registry.list_agents():
+            agent_config = agent_registry.get_agent_config(agent_name)
+            if agent_config:
+                agents.append(AgentInfo(
+                    name=agent_config.name,
+                    description=agent_config.description,
+                    default_model=agent_config.default_model,
+                    allowed_models=agent_config.allowed_models,
+                    enabled=agent_config.enabled
+                ))
+
+        return agents
+    except Exception as e:
+        logging.error(f"Failed to get agents: {e}")
+        raise HTTPException(status_code=500, detail="Failed to get agents")
+
+@app.get("/api/admin/llm-models", response_model=List[LLMModelInfo])
+async def get_llm_models(current_user: TokenData = Depends(require_role(UserRole.ADMIN))):
+    """Get available LLM models"""
+    try:
+        llm_config = get_llm_config()
+        models = []
+
+        for model in llm_config.models:
+            models.append(LLMModelInfo(
+                name=model.name,
+                provider=model.provider.value,
+                is_default=model.is_default
+            ))
+
+        return models
+    except Exception as e:
+        logging.error(f"Failed to get LLM models: {e}")
+        raise HTTPException(status_code=500, detail="Failed to get LLM models")
+
+@app.post("/api/admin/agent-assignments")
+async def assign_model_to_agent(
+    assignment: AgentAssignment,
+    current_user: TokenData = Depends(require_role(UserRole.ADMIN))
+):
+    """Assign an LLM model to an agent"""
+    try:
+        agent_registry = get_agent_registry()
+        agent_config = agent_registry.get_agent_config(assignment.agent_name)
+
+        if not agent_config:
+            raise HTTPException(status_code=404, detail=f"Agent {assignment.agent_name} not found")
+
+        # Check if model is available
+        available_models = get_available_models()
+        if assignment.model_name not in available_models:
+            raise HTTPException(status_code=400, detail=f"Model {assignment.model_name} not available")
+
+        # Check if model is allowed for this agent
+        if assignment.model_name not in agent_config.allowed_models:
+            raise HTTPException(status_code=400, detail=f"Model {assignment.model_name} not allowed for agent {assignment.agent_name}")
+
+        # Assign the model to the agent
+        agent_registry.set_default_model_for_agent(assignment.agent_name, assignment.model_name)
+
+        return {
+            "status": "success",
+            "agent_name": assignment.agent_name,
+            "model_name": assignment.model_name,
+            "message": "Model assigned to agent successfully"
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Failed to assign model to agent: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to assign model to agent: {e}")
 
 # WebSocket endpoint for real-time updates
 @app.websocket("/api/admin/ws/updates")
