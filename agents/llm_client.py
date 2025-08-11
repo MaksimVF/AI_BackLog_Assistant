@@ -14,6 +14,7 @@ llm_manager = LLMProviderManager()
 def chat_completion(
     messages: List[Dict[str, str]],
     model_name: Optional[str] = None,
+    agent: Optional['BaseAgent'] = None,
     **kwargs
 ) -> str:
     """
@@ -22,12 +23,17 @@ def chat_completion(
     Args:
         messages: List of message dictionaries with 'role' and 'content'
         model_name: Optional model name to use (None for default)
+        agent: Optional agent instance (if provided, uses agent's model if model_name is None)
         **kwargs: Additional parameters for the LLM call
 
     Returns:
         Generated text response
     """
     try:
+        # Use agent's model if available and no model specified
+        if agent and not model_name:
+            model_name = agent.get_model_name()
+
         result = llm_manager.call_model(
             model_name=model_name,
             messages=messages,
@@ -41,6 +47,7 @@ def chat_completion(
 def text_completion(
     prompt: str,
     model_name: Optional[str] = None,
+    agent: Optional['BaseAgent'] = None,
     **kwargs
 ) -> str:
     """
@@ -49,12 +56,17 @@ def text_completion(
     Args:
         prompt: Input text prompt
         model_name: Optional model name to use (None for default)
+        agent: Optional agent instance (if provided, uses agent's model if model_name is None)
         **kwargs: Additional parameters for the LLM call
 
     Returns:
         Generated text response
     """
     try:
+        # Use agent's model if available and no model specified
+        if agent and not model_name:
+            model_name = agent.get_model_name()
+
         result = llm_manager.call_model(
             model_name=model_name,
             prompt=prompt,
