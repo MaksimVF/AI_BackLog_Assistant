@@ -99,4 +99,118 @@ class WeaviateMemory:
                     "domain_tags": case.get("domain_tags", [])
                 })
 
+
         return cases
+
+    def get_statistics(self) -> Dict[str, Any]:
+        """
+        Get statistics about the Weaviate instance.
+
+        Returns:
+            Dictionary with statistics including:
+            - object_count: Total number of objects
+            - class_count: Number of classes
+            - schema_info: Schema details
+        """
+        if not self.client:
+            return {
+                "error": "Weaviate client not available",
+                "object_count": 0,
+                "class_count": 0,
+                "schema_info": {}
+            }
+
+        try:
+            # Get schema information
+            schema = self.client.schema.get()
+            classes = schema.get("classes", [])
+
+            # Get object count
+            object_count = 0
+            for class_obj in classes:
+                class_name = class_obj.get("class", "")
+                try:
+                    count_response = self.client.query.aggregate(class_name).with_meta_count().do()
+                    class_count = count_response.get("data", {}).get("Aggregate", {}).get(class_name, [{}])[0].get("meta", {}).get("count", 0)
+                    object_count += class_count
+                except Exception as e:
+                    print(f"Warning: Could not get count for class {class_name}: {e}")
+
+            return {
+                "object_count": object_count,
+                "class_count": len(classes),
+                "schema_info": {
+                    "classes": [c.get("class", "") for c in classes],
+                    "properties": {c.get("class", ""): [p.get("name", "") for p in c.get("properties", [])] for c in classes}
+                }
+            }
+        except Exception as e:
+            print(f"Error getting Weaviate statistics: {e}")
+            return {
+                "error": str(e),
+                "object_count": 0,
+                "class_count": 0,
+                "schema_info": {}
+            }
+
+    def get_case_statistics(self) -> Dict[str, Any]:
+        """
+        Get statistics specifically for Case objects.
+
+        Returns:
+            Dictionary with Case statistics including:
+            - total_cases: Total number of cases
+            - status_distribution: Count by processing status
+            - domain_distribution: Count by domain tags
+        """
+        if not self.client:
+            return {
+                "error": "Weaviate client not available",
+                "total_cases": 0,
+                "status_distribution": {},
+                "domain_distribution": {}
+            }
+
+        try:
+            # Get total count
+            count_response = self.client.query.aggregate("Case").with_meta_count().do()
+            total_cases = count_response.get("data", {}).get("Aggregate", {}).get("Case", [{}])[0].get("meta", {}).get("count", 0)
+
+            # Get status distribution
+            status_response = self.client.query.aggregate("Case") \
+                .with_fields("processing_status") \
+                .with_group_by_filter(["processing_status"]) \
+                .do()
+
+            status_dist = {}
+            for group in status_response.get("data", {}).get("Aggregate", {}).get("Case", []):
+                status = group.get("groupedBy", {}).get("value", "unknown")
+                count = group.get("meta", {}).get("count", 0)
+                status_dist[status] = count
+
+            # Get domain distribution
+            domain_response = self.client.query.aggregate("Case") \
+                .with_fields("domain_tags") \
+                .with_group_by_filter(["domain_tags"]) \
+                .do()
+
+            domain_dist = {}
+            for group in domain_response.get("data", {}).get("Aggregate", {}).get("Case", []):
+                domain = group.get("groupedBy", {}).get("value", "unknown")
+                count = group.get("meta", {}).get("count", 0)
+                domain_dist[domain] = count
+
+            return {
+                "total_cases": total_cases,
+                "status_distribution": status_dist,
+                "domain_distribution": domain_dist
+            }
+        except Exception as e:
+            print(f"Error getting case statistics: {e}")
+            return {
+                "error": str(e),
+                "total_cases": 0,
+                "status_distribution": {},
+                "domain_distribution": {}
+            }
+
