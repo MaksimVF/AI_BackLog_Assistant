@@ -1,6 +1,7 @@
 import weaviate
 from typing import Optional, Dict, Any, List
 import json
+from utils.error_handling import AIBacklogError, DependencyError, handle_exception, ErrorSeverity
 
 class WeaviateMemory:
     """Weaviate vector store client for memory management"""
@@ -16,7 +17,11 @@ class WeaviateMemory:
                 self.client = weaviate.Client(url=url)
                 self._setup_schema()
             except Exception as e:
-                print(f"Warning: Could not connect to Weaviate: {e}")
+                error = DependencyError(
+                    f"Could not connect to Weaviate: {str(e)}",
+                    service="weaviate",
+                    context={"url": url, "scheme": scheme}
+                )
                 self.client = None
 
     def _setup_schema(self):
@@ -134,7 +139,12 @@ class WeaviateMemory:
                     class_count = count_response.get("data", {}).get("Aggregate", {}).get(class_name, [{}])[0].get("meta", {}).get("count", 0)
                     object_count += class_count
                 except Exception as e:
-                    print(f"Warning: Could not get count for class {class_name}: {e}")
+                    log_error(
+                    f"Could not get count for class {class_name}: {str(e)}",
+                    severity=ErrorSeverity.WARNING,
+                    error_code="AIBA_WEAVIATE_COUNT_ERROR",
+                    context={"class_name": class_name}
+                )
 
             return {
                 "object_count": object_count,
@@ -145,7 +155,12 @@ class WeaviateMemory:
                 }
             }
         except Exception as e:
-            print(f"Error getting Weaviate statistics: {e}")
+            error = handle_exception(
+                    e,
+                    severity=ErrorSeverity.ERROR,
+                    error_code="AIBA_WEAVIATE_STATS_ERROR",
+                    context={"method": "get_statistics"}
+                )
             return {
                 "error": str(e),
                 "object_count": 0,
@@ -206,7 +221,12 @@ class WeaviateMemory:
                 "domain_distribution": domain_dist
             }
         except Exception as e:
-            print(f"Error getting case statistics: {e}")
+            error = handle_exception(
+                    e,
+                    severity=ErrorSeverity.ERROR,
+                    error_code="AIBA_WEAVIATE_CASE_STATS_ERROR",
+                    context={"method": "get_case_statistics"}
+                )
             return {
                 "error": str(e),
                 "total_cases": 0,

@@ -1,4 +1,5 @@
 # tools/extract_frames.py
+from utils.error_handling import AIBacklogError, ProcessingError, handle_exception, ErrorSeverity, log_error
 
 import os
 import cv2

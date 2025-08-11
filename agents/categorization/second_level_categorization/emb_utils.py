@@ -2,6 +2,7 @@
 Embedding Utilities for Categorization
 """
 
+from utils.error_handling import AIBacklogError, ProcessingError, handle_exception, ErrorSeverity, log_error
 import numpy as np
 import random
 import time
@@ -39,7 +40,12 @@ def get_embedding_model():
 
             print(f"Embedding model loaded successfully in {_model_load_time:.2f} seconds")
         except Exception as e:
-            print(f"Failed to load embedding model: {e}")
+            error = handle_exception(
+                    e,
+                    severity=ErrorSeverity.ERROR,
+                    error_code="AIBA_EMBEDDING_LOAD_ERROR",
+                    context={"model_name": model_name}
+                )
             # Fallback to mock embeddings if model loading fails
             return None
     return _embedding_model
@@ -102,7 +108,12 @@ def get_embedding(text: str) -> np.ndarray:
                 manage_cache_size()
             return mock_embedding
     except Exception as e:
-        print(f"Error generating embedding: {e}")
+        error = handle_exception(
+                    e,
+                    severity=ErrorSeverity.WARNING,
+                    error_code="AIBA_EMBEDDING_GENERATION_ERROR",
+                    context={"text_length": len(text) if text else 0}
+                )
         # Fallback to random embedding if model fails
         random.seed(hash(text) % 4294967296)
         fallback_embedding = np.array([random.random() for _ in range(384)])
