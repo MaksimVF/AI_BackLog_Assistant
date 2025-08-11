@@ -1,8 +1,8 @@
 
 
 
-# TODO: Import LLM client when available
-# from core.llm.llm_client import llm_chat
+from typing import Dict, Any, List
+from agents.llm_client import chat_completion
 
 class DocumentClassifierAgent:
     """
@@ -21,22 +21,39 @@ class DocumentClassifierAgent:
             "Отвечай строго одним из указанных вариантов."
         )
 
-    def classify(self, text: str) -> str:
+    def classify(self, text: str, model_name: str = None, use_llm: bool = True) -> str:
         """
         Classify the document type based on its content.
 
         Args:
             text: The document text to classify
+            model_name: Optional model name to use (None for default)
+            use_llm: Whether to use LLM for classification (True) or fallback to heuristics (False)
 
         Returns:
             The document type as a string
         """
-        # TODO: Implement LLM-based classification when dependencies are available
-        # user_prompt = f"Вот текст документа:\n{text[:3000]}\n\nКакой это тип документа?"
-        # response = llm_chat(self.system_prompt, user_prompt)
-        # return response.strip().lower()
+        if use_llm:
+            try:
+                # Prepare messages for LLM
+                messages = [
+                    {"role": "system", "content": self.system_prompt},
+                    {"role": "user", "content": f"Вот текст документа:\n{text[:3000]}\n\nКакой это тип документа?"}
+                ]
 
-        # For now, use simple keyword matching as placeholder
+                # Call LLM for classification
+                response = chat_completion(messages, model_name=model_name)
+                return response.strip().lower()
+
+            except Exception as e:
+                # Fallback to heuristic method if LLM fails
+                print(f"LLM classification failed, using fallback: {e}")
+                return self._classify_with_heuristics(text)
+        else:
+            return self._classify_with_heuristics(text)
+
+    def _classify_with_heuristics(self, text: str) -> str:
+        """Fallback classification using simple keyword matching."""
         text_lower = text.lower()
 
         if "договор" in text_lower:
