@@ -25,6 +25,7 @@ from security.api_security import (
     sanitize_api_input,
     check_content_security_policy
 )
+from security.security_utils import SecurityUtils, secure_api_endpoint
 
 
 # Initialize agents
@@ -71,13 +72,22 @@ def handle_documents(current_user, current_email, current_role):
 
         # Save the file temporarily with sanitized filename
         temp_dir = tempfile.gettempdir()
-        temp_path = os.path.join(temp_dir, sanitized_filename)
-
-        # Secure file saving with validation
         try:
+            # Use security utils for path sanitization
+            sanitized_path = SecurityUtils.sanitize_path(
+                sanitized_filename,
+                allowed_extensions=['.pdf', '.txt', '.docx', '.xlsx']
+            )
+            temp_path = os.path.join(temp_dir, sanitized_path)
+
+            # Secure file saving with validation
             file.save(temp_path)
+
             # Additional file validation can be added here
             # (e.g., file type checking, virus scanning)
+
+        except ValueError as e:
+            return jsonify({'error': f'Invalid file: {str(e)}'}), 400
         except Exception as e:
             return jsonify({'error': f'File save error: {str(e)}'}), 500
 
@@ -185,7 +195,18 @@ def analyze_document(current_user, current_email, current_role, document_id):
         return jsonify({'error': 'Document not found or access denied'}), 404
 
     data = request.get_json()
+    if not data:
+        return jsonify({'error': 'Invalid JSON data'}), 400
+
+    # Validate analysis_type input
     analysis_type = data.get('analysis_type', 'basic')
+    if not SecurityUtils.validate_input(analysis_type, max_length=50):
+        return jsonify({'error': 'Invalid analysis type'}), 400
+
+    # Validate that analysis_type is one of the allowed values
+    allowed_types = ['basic', 'sentiment', 'entity', 'summarization']
+    if analysis_type not in allowed_types:
+        return jsonify({'error': f'Invalid analysis type. Allowed: {allowed_types}'}), 400
 
     try:
         # Create analysis record
