@@ -1,8 +1,9 @@
 
 
 
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional, Union
 from agents.llm_client import chat_completion
+from utils.batch_decorator import batch_processing
 
 class DocumentClassifierAgent:
     """
@@ -21,9 +22,13 @@ class DocumentClassifierAgent:
             "Отвечай строго одним из указанных вариантов."
         )
 
+    @batch_processing(agent_type="classifier", batch_size=3, max_wait_time=1.0)
     def classify(self, text: str, model_name: str = None, use_llm: bool = True) -> str:
         """
         Classify the document type based on its content.
+
+        This method supports batch processing for improved efficiency when
+        classifying multiple documents.
 
         Args:
             text: The document text to classify

@@ -1,21 +1,37 @@
 
 
 """
-JWT Authentication Middleware for API Gateway
+Enhanced JWT Authentication Middleware with improved security and validation for API Gateway
 """
 
 import os
 import datetime
+import logging
 from functools import wraps
-from flask import request, jsonify, current_app
+from flask import request, jsonify, current_app, g, after_this_request
 import jwt
 from jwt import ExpiredSignatureError, InvalidTokenError
+from security.api_security import verify_jwt_token, generate_hmac_signature
+from utils.error_handling import SecurityError
+
+# Configure logging
+logger = logging.getLogger(__name__)
 
 # JWT Configuration
 JWT_SECRET = os.getenv('JWT_SECRET', 'your-jwt-secret-key-here')
 JWT_ALGORITHM = 'HS256'
 JWT_EXPIRE_MINUTES = 60  # Token expires in 60 minutes
+
 JWT_EXPIRE_DAYS = 30  # Refresh token expires in 30 days
+
+# Security headers
+SECURE_HEADERS = {
+    'X-Content-Type-Options': 'nosniff',
+    'X-Frame-Options': 'DENY',
+    'X-XSS-Protection': '1; mode=block',
+    'Content-Security-Policy': "default-src 'self'; frame-ancestors 'none'"
+}
+
 
 def generate_token(user_id, email, role='user', token_type='access'):
     """
@@ -40,7 +56,7 @@ def generate_token(user_id, email, role='user', token_type='access'):
 
 def token_required(f):
     """
-    Decorator to require JWT authentication
+    Enhanced decorator to require JWT authentication with additional security checks
     """
     @wraps(f)
     def decorated(*args, **kwargs):
@@ -53,18 +69,35 @@ def token_required(f):
                 token = auth_header.split(' ')[1]
 
         if not token:
+            logger.warning("Authentication attempt without token")
             return jsonify({'error': 'Token is missing'}), 401
 
         try:
-            # Decode token
-            data = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
-            current_user = data['sub']
-            current_email = data['email']
-            current_role = data['role']
+            # Verify token using enhanced security
+            payload = verify_jwt_token(token)
+            current_user = payload['sub']
+            current_email = payload['email']
+            current_role = payload['role']
+
+            # Log successful authentication
+            logger.info(f"User {current_user} ({current_email}) authenticated successfully")
+
+            # Add security headers to response
+            @after_this_request
+            def add_security_headers(response):
+                for header, value in SECURE_HEADERS.items():
+                    response.headers[header] = value
+                return response
+
         except ExpiredSignatureError:
+            logger.warning("Expired token detected")
             return jsonify({'error': 'Token has expired'}), 401
         except InvalidTokenError:
+            logger.warning("Invalid token detected")
             return jsonify({'error': 'Token is invalid'}), 401
+        except SecurityError as e:
+            logger.warning(f"Security error: {str(e)}")
+            return jsonify({'error': str(e)}), 401
 
         return f(current_user, current_email, current_role, *args, **kwargs)
 

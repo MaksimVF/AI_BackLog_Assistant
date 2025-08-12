@@ -4,6 +4,7 @@
 
 """
 Document Processing Routes for API Gateway
+With enhanced security and validation
 """
 
 import os
@@ -18,6 +19,12 @@ from datetime import datetime
 from agents.pipeline_coordinator_agent import PipelineCoordinatorAgent
 from agents.categorization.document_classifier_agent import DocumentClassifierAgent
 from agents.text_processor_agent import text_processor_agent
+from utils.validation import InputValidator, validate_pydantic_model
+from security.api_security import (
+    validate_api_request,
+    sanitize_api_input,
+    check_content_security_policy
+)
 
 
 # Initialize agents
@@ -28,23 +35,51 @@ document_classifier = DocumentClassifierAgent()
 @token_required
 def handle_documents(current_user, current_email, current_role):
     """
-    Handle document operations with real agent integration
+    Handle document operations with real agent integration and enhanced security
     """
+    # Check content security policy
+    try:
+        check_content_security_policy(
+            request,
+            allowed_sources=['http://localhost', 'https://yourdomain.com']
+        )
+    except Exception as e:
+        return jsonify({'error': str(e)}), 403
+
     if request.method == 'POST':
-        # Upload and process a document
+        # Upload and process a document with enhanced validation
         if 'file' not in request.files:
             return jsonify({'error': 'No file provided'}), 400
 
         file = request.files['file']
         document_type = request.form.get('type', 'unknown')
 
+        # Validate document type
+        if not InputValidator.sanitize_text(document_type):
+            return jsonify({'error': 'Invalid document type'}), 400
+
         if file.filename == '':
             return jsonify({'error': 'Empty filename'}), 400
 
-        # Save the file temporarily
+        # Validate and sanitize filename
+        try:
+            sanitized_filename = InputValidator.sanitize_text(file.filename)
+            if not sanitized_filename:
+                raise ValueError("Invalid filename after sanitization")
+        except Exception as e:
+            return jsonify({'error': f'Invalid filename: {str(e)}'}), 400
+
+        # Save the file temporarily with sanitized filename
         temp_dir = tempfile.gettempdir()
-        temp_path = os.path.join(temp_dir, file.filename)
-        file.save(temp_path)
+        temp_path = os.path.join(temp_dir, sanitized_filename)
+
+        # Secure file saving with validation
+        try:
+            file.save(temp_path)
+            # Additional file validation can be added here
+            # (e.g., file type checking, virus scanning)
+        except Exception as e:
+            return jsonify({'error': f'File save error: {str(e)}'}), 500
 
         try:
             # Read file content (for now just read as text, in production use proper file handling)

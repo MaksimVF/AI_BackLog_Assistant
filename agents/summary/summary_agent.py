@@ -4,12 +4,13 @@
 
 
 """
-Main Summary Agent
+Main Summary Agent with Batch Processing Support
 """
 
 from agents.summary.summary_extractor_agent import SummaryExtractorAgent
 from agents.summary.keypoint_compressor_agent import KeypointCompressorAgent
 from agents.summary.insight_generator_agent import InsightGeneratorAgent
+from utils.batch_decorator import batch_processing
 
 class SummaryAgent:
     """
@@ -22,6 +23,7 @@ class SummaryAgent:
         self.keypoint_compressor = KeypointCompressorAgent()
         self.insight_generator = InsightGeneratorAgent()
 
+    @batch_processing(agent_type="summarizer", batch_size=2, max_wait_time=1.5)
     def generate_summary(self, document_text: str) -> dict:
         """
         Generates a complete summary of the document.
