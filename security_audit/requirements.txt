@@ -1,0 +1,5 @@
+
+
+# Security audit dependencies
+pip-audit>=2.0.0
+
