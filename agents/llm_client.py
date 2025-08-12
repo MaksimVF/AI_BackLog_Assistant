@@ -2,15 +2,17 @@
 
 """
 LLM Client Wrapper
-Provides a simple interface for agents to use LLM functionality.
+Provides a simple interface for agents to use LLM functionality with caching.
 """
 
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, Tuple
 from .llm_provider_manager import LLMProviderManager
+from utils.llm_cache import llm_cache_decorator, global_llm_cache
 
 # Global LLM provider manager instance
 llm_manager = LLMProviderManager()
 
+@llm_cache_decorator(ttl=3600, max_size=1000)
 def chat_completion(
     messages: List[Dict[str, str]],
     model_name: Optional[str] = None,
@@ -18,7 +20,7 @@ def chat_completion(
     **kwargs
 ) -> str:
     """
-    Generate chat completion using LLM.
+    Generate chat completion using LLM with caching support.
 
     Args:
         messages: List of message dictionaries with 'role' and 'content'
@@ -44,6 +46,7 @@ def chat_completion(
         # Fallback to placeholder response if LLM call fails
         return f"LLM call failed: {str(e)}. Using fallback response."
 
+@llm_cache_decorator(ttl=3600, max_size=1000)
 def text_completion(
     prompt: str,
     model_name: Optional[str] = None,
@@ -51,7 +54,7 @@ def text_completion(
     **kwargs
 ) -> str:
     """
-    Generate text completion using LLM.
+    Generate text completion using LLM with caching support.
 
     Args:
         prompt: Input text prompt
