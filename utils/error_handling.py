@@ -9,6 +9,7 @@ import logging
 import traceback
 from typing import Optional, Dict, Any, List
 from enum import Enum
+from custom_exceptions import SecurityError
 
 # Configure logging
 logging.basicConfig(

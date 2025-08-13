@@ -70,9 +70,9 @@ This document outlines the phased implementation plan for enhancing storage mana
 
 ## Implementation Status
 
-- [ ] Stage 1: Storage Pricing Model and Admin Interface
-- [ ] Stage 2: User Storage Quotas
-- [ ] Stage 3: Tariff Plan Integration
-- [ ] Stage 4: One-time Storage Purchase API
+- [x] Stage 1: Storage Pricing Model and Admin Interface
+- [x] Stage 2: User Storage Quotas
+- [x] Stage 3: Tariff Plan Integration
+- [x] Stage 4: One-time Storage Purchase API
 - [ ] Stage 5: UI Enhancements
 - [ ] Stage 6: Billing Integration and Enforcement
