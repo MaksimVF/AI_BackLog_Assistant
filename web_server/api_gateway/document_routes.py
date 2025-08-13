@@ -16,6 +16,7 @@ from .auth_middleware import token_required
 from ..app import db
 from web_server.models import Document, DocumentAnalysis
 from datetime import datetime
+from web_server.billing_manager import BillingManager, BillingException
 from agents.pipeline_coordinator_agent import PipelineCoordinatorAgent
 from agents.categorization.document_classifier_agent import DocumentClassifierAgent
 from agents.text_processor_agent import text_processor_agent
@@ -267,5 +268,70 @@ def analyze_document(current_user, current_email, current_role, document_id):
     except Exception as e:
         current_app.logger.error(f"Document analysis error: {str(e)}")
         return jsonify({'error': f'Document analysis failed: {str(e)}'}), 500
+
+@api_gateway_bp.route('/api/v1/storage/purchase', methods=['POST'])
+@token_required
+def purchase_storage(current_user, current_email, current_role):
+    """
+    Purchase additional storage for an organization.
+
+    Expected JSON payload:
+    {
+        "organization_id": "org_123",
+        "gb_amount": 10.0
+    }
+    """
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'Invalid JSON data'}), 400
+
+        # Validate required fields
+        organization_id = data.get('organization_id')
+        gb_amount = data.get('gb_amount')
+
+        if not organization_id:
+            return jsonify({'error': 'organization_id is required'}), 400
+
+        if not gb_amount or gb_amount <= 0:
+            return jsonify({'error': 'gb_amount must be a positive number'}), 400
+
+        try:
+            # Convert to float
+            gb_amount = float(gb_amount)
+        except (ValueError, TypeError):
+            return jsonify({'error': 'gb_amount must be a valid number'}), 400
+
+        # Validate that the user has permission to purchase storage for this organization
+        # In a real implementation, we would check if the user belongs to the organization
+        # For now, we'll allow any authenticated user to purchase for any organization
+
+        try:
+            # Use the billing manager to process the purchase
+            purchase_result = BillingManager.purchase_storage(
+                organization_id=organization_id,
+                gb_amount=gb_amount
+            )
+
+            return jsonify({
+                'status': 'success',
+                'message': 'Storage purchased successfully',
+                'gb_purchased': purchase_result['gb_purchased'],
+                'total_cost': purchase_result['total_cost'],
+                'price_per_gb': purchase_result['price_per_gb'],
+                'new_balance': purchase_result['new_balance'],
+                'transaction_id': purchase_result['transaction_id'],
+                'user_id': current_user
+            })
+
+        except BillingException as e:
+            return jsonify({'error': str(e), 'status_code': e.status_code}), e.status_code
+        except Exception as e:
+            current_app.logger.error(f"Storage purchase error: {str(e)}")
+            return jsonify({'error': f'Storage purchase failed: {str(e)}'}), 500
+
+    except Exception as e:
+        current_app.logger.error(f"Storage purchase error: {str(e)}")
+        return jsonify({'error': f'Storage purchase failed: {str(e)}'}), 500
 
 

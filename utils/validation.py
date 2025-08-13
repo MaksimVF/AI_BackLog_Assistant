@@ -1,14 +1,13 @@
 
 
 
-
 """
 Input Validation and Sanitization Utilities
 """
 
 import re
 from typing import Any, Dict, List, Optional, Union
-from pydantic import BaseModel, ValidationError, validator, Field, constr
+from pydantic import BaseModel, ValidationError as PydanticValidationError, validator, Field, constr
 from utils.error_handling import ValidationError as AIValidationError
 
 class SanitizedString(str):
@@ -182,7 +181,7 @@ def validate_pydantic_model(model_class: type(BaseModel), data: Dict[str, Any]) 
     try:
         model_instance = model_class(**data)
         return model_instance.dict()
-    except ValidationError as e:
+    except PydanticValidationError as e:
         error_details = []
         for error in e.errors():
             field = error['loc'][0] if error['loc'] else 'request'
@@ -243,7 +242,4 @@ def sanitize_list(input_list: List[Any]) -> List[Any]:
         item
         for item in input_list
     ]
-
-
-
 

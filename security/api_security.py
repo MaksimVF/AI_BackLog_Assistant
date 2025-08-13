@@ -12,7 +12,7 @@ import time
 import hmac
 import hashlib
 import logging
-from typing import Any, Callable, Dict, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Union
 from fastapi import Request, Response, HTTPException
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import JWTError, jwt
@@ -20,6 +20,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.types import ASGIApp, Receive, Scope, Send
 from utils.error_handling import SecurityError
 from utils.validation import InputValidator, validate_pydantic_model
+from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
 

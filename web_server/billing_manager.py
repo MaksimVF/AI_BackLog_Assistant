@@ -356,3 +356,81 @@ class BillingManager:
 
         return tariff_plan.access_features or []
 
+    @staticmethod
+    def purchase_storage(organization_id: str, gb_amount: float) -> Dict[str, Any]:
+        """
+        Purchase additional storage for an organization.
+
+        Args:
+            organization_id: The organization ID
+            gb_amount: Amount of storage to purchase in GB
+
+        Returns:
+            Dict: Purchase result including cost and new storage quota
+
+        Raises:
+            BillingException: For various billing errors
+        """
+        try:
+            # Get organization balance
+            org_balance = OrganizationBalance.query.filter_by(organization_id=organization_id).first()
+            if not org_balance:
+                raise BillingException("Organization balance not found", 404)
+
+            # Get tariff plan to determine storage pricing
+            if org_balance.tariff_plan_id:
+                tariff_plan = TariffPlan.query.get(org_balance.tariff_plan_id)
+                if tariff_plan:
+                    # Use tariff plan's additional storage price
+                    price_per_gb = tariff_plan.additional_storage_price_per_gb
+                else:
+                    # Fallback to default pricing
+                    price_per_gb = 10.0  # Default price per GB per month
+            else:
+                # Use default pricing
+                price_per_gb = 10.0  # Default price per GB per month
+
+            # Calculate total cost (for one month)
+            total_cost = gb_amount * price_per_gb
+
+            # Check if organization has sufficient balance
+            if org_balance.balance_rub < total_cost:
+                raise BillingException("Insufficient balance for storage purchase", 402)
+
+            # Deduct cost from balance
+            org_balance.balance_rub -= total_cost
+            org_balance.last_updated = datetime.utcnow()
+            db.session.add(org_balance)
+
+            # Log the storage purchase
+            usage_log = BillingManager.log_usage(
+                organization_id=organization_id,
+                user_id=None,  # Could be updated to track which user made the purchase
+                feature="storage_purchase",
+                units_used=int(gb_amount),  # Store as GB units
+                price_charged=total_cost,
+                additional_data={
+                    "storage_gb": gb_amount,
+                    "price_per_gb": price_per_gb,
+                    "purchase_type": "one_time"
+                }
+            )
+
+            db.session.commit()
+
+            return {
+                "status": "success",
+                "gb_purchased": gb_amount,
+                "total_cost": total_cost,
+                "price_per_gb": price_per_gb,
+                "new_balance": org_balance.balance_rub,
+                "transaction_id": usage_log.id
+            }
+
+        except SQLAlchemyError as e:
+            db.session.rollback()
+            raise BillingException(f"Database error: {str(e)}", 500)
+        except Exception as e:
+            db.session.rollback()
+            raise e
+
