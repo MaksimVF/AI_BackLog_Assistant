@@ -343,6 +343,19 @@
                 <h3>Storage Pricing Configuration</h3>
                 <p>Manage storage pricing tiers and retention policies.</p>
                 <a href="{{ url_for('admin.storage_pricing_ui') }}" class="btn">Go to Storage Pricing</a>
+
+                <h3>User Storage Quotas</h3>
+                <p>Manage individual user storage quotas and retention policies.</p>
+                <a href="{{ url_for('admin.storage_quotas_ui') }}" class="btn">Go to User Quotas</a>
+
+                <h3>Quick Storage Actions</h3>
+                <div style="margin-bottom: 15px;">
+                    <button id="refreshStorageBtn" class="btn">Refresh Storage Data</button>
+                </div>
+                <div id="storageSummary">
+                    <h4>Storage Summary</h4>
+                    <p>Loading storage data...</p>
+                </div>
             </div>
 
             <div class="section" id="payment-history">
@@ -396,5 +409,89 @@
             </div>
         </div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Storage summary functionality
+            const refreshStorageBtn = document.getElementById('refreshStorageBtn');
+            const storageSummary = document.getElementById('storageSummary');
+
+            function loadStorageSummary() {
+                // Load storage pricing data
+                fetch('/admin/storage/pricing')
+                    .then(response => response.json())
+                    .then(pricingData => {
+                        // Load user quotas data
+                        fetch('/admin/storage/quotas', {
+                            headers: {
+                                'Authorization': `Bearer ${localStorage.getItem('token')}`
+                            }
+                        })
+                        .then(response => response.json())
+                        .then(quotasData => {
+                            // Calculate summary statistics
+                            const totalUsers = quotasData.length;
+                            const totalStorageMB = quotasData.reduce((sum, user) => sum + user.quota_mb, 0);
+                            const totalStorageGB = (totalStorageMB / 1024).toFixed(2);
+
+                            // Build summary HTML
+                            let summaryHTML = `
+                                <h4>Storage Summary</h4>
+                                <p><strong>Total Users:</strong> ${totalUsers}</p>
+                                <p><strong>Total Storage Allocated:</strong> ${totalStorageGB} GB (${totalStorageMB} MB)</p>
+
+                                <h5>Storage Pricing Tiers:</h5>
+                                <ul>
+                            `;
+
+                            pricingData.forEach(tier => {
+                                summaryHTML += `
+                                    <li>
+                                        <strong>${tier.tier}:</strong> ${tier.price_per_gb_month} RUB/GB/month,
+                                        Retention: ${tier.retention_days} days
+                                    </li>
+                                `;
+                            });
+
+                            summaryHTML += '</ul>';
+
+                            // Set by storage tier
+                            const storageByTier = {};
+                            quotasData.forEach(user => {
+                                if (!storageByTier[user.storage_tier]) {
+                                    storageByTier[user.storage_tier] = 0;
+                                }
+                                storageByTier[user.storage_tier] += user.quota_mb;
+                            });
+
+                            summaryHTML += '<h5>Storage by Tier:</h5><ul>';
+                            for (const [tier, storageMB] of Object.entries(storageByTier)) {
+                                const storageGB = (storageMB / 1024).toFixed(2);
+                                summaryHTML += `
+                                    <li><strong>${tier}:</strong> ${storageGB} GB (${storageMB} MB)</li>
+                                `;
+                            }
+                            summaryHTML += '</ul>';
+
+                            storageSummary.innerHTML = summaryHTML;
+                        })
+                        .catch(error => {
+                            console.error('Error loading quotas:', error);
+                            storageSummary.innerHTML = '<p>Error loading storage data</p>';
+                        });
+                    })
+                    .catch(error => {
+                        console.error('Error loading pricing:', error);
+                        storageSummary.innerHTML = '<p>Error loading storage data</p>';
+                    });
+            }
+
+            if (refreshStorageBtn) {
+                refreshStorageBtn.addEventListener('click', loadStorageSummary);
+                // Load initially
+                loadStorageSummary();
+            }
+        });
+    </script>
 </body>
 </html>
