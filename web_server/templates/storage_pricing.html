@@ -1,0 +1,158 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Storage Pricing Configuration</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        h2 {
+            color: #333;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .pricing-list {
+            margin-top: 30px;
+        }
+        .pricing-item {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        .pricing-item:last-child {
+            border-bottom: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Storage Pricing Configuration</h2>
+        <form id="storagePricingForm">
+            <div class="form-group">
+                <label>Tier</label>
+                <select class="form-control" id="tier" required>
+                    <option value="free">Free</option>
+                    <option value="standard">Standard</option>
+                    <option value="premium">Premium</option>
+                    <option value="custom">Custom</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Price per GB per Month (RUB)</label>
+                <input type="number" class="form-control" id="price_per_gb" step="0.01" required>
+            </div>
+            <div class="form-group">
+                <label>Retention Days</label>
+                <input type="number" class="form-control" id="retention_days" required>
+            </div>
+            <div class="form-group">
+                <label>Description</label>
+                <input type="text" class="form-control" id="description">
+            </div>
+            <button type="submit" class="btn btn-primary">Save Pricing</button>
+        </form>
+
+        <div class="pricing-list">
+            <h3>Current Storage Pricing</h3>
+            <div id="pricingList">
+                <!-- Pricing items will be loaded here by JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Load current pricing
+        fetch('/admin/storage/pricing')
+            .then(response => response.json())
+            .then(data => {
+                const pricingList = document.getElementById('pricingList');
+                pricingList.innerHTML = '';
+
+                data.forEach(pricing => {
+                    const div = document.createElement('div');
+                    div.className = 'pricing-item';
+                    div.innerHTML = `
+                        <strong>${pricing.tier}</strong><br>
+                        Price: ${pricing.price_per_gb_month} RUB/GB/month<br>
+                        Retention: ${pricing.retention_days} days<br>
+                        Description: ${pricing.description || 'N/A'}
+                    `;
+                    pricingList.appendChild(div);
+                });
+            });
+
+        // Handle form submission
+        document.getElementById('storagePricingForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const data = {
+                tier: document.getElementById('tier').value,
+                price_per_gb: parseFloat(document.getElementById('price_per_gb').value),
+                retention_days: parseInt(document.getElementById('retention_days').value),
+                description: document.getElementById('description').value
+            };
+
+            fetch('/admin/storage/pricing', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.status === 'success') {
+                    alert('Storage pricing updated successfully');
+                    // Refresh the list
+                    window.location.reload();
+                } else {
+                    alert('Error: ' + result.message);
+                }
+            });
+        });
+    });
+    </script>
+</body>
+</html>

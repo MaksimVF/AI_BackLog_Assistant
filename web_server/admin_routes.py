@@ -14,7 +14,7 @@ from config.llm_config import (
     get_llm_config, set_llm_config, add_model_config, remove_model_config,
     set_default_model, LLMModelConfig, LLMProvider
 )
-from .billing_models import TariffPlan, OrganizationBalance, UsageLog
+from .billing_models import TariffPlan, OrganizationBalance, UsageLog, StoragePricing
 from .billing_manager import BillingManager
 
 admin_bp = Blueprint('admin', __name__)
@@ -366,5 +366,46 @@ def admin_tariffs_api():
 
             return jsonify({"status": "error", "message": "Plan not found"}), 404
 
+
         return jsonify({"status": "error", "message": "Plan ID required"}), 400
+
+@admin_bp.route('/admin/storage/pricing', methods=['GET', 'POST'])
+@login_required
+def manage_storage_pricing():
+    """Manage storage pricing configuration"""
+    require_admin_role()
+
+    if request.method == 'POST':
+        data = request.json
+        tier = data.get('tier')
+        price_per_gb = data.get('price_per_gb')
+        retention_days = data.get('retention_days')
+        description = data.get('description', '')
+
+        if not tier or price_per_gb is None or retention_days is None:
+            return jsonify({'status': 'error', 'message': 'Missing required fields'}), 400
+
+        pricing = StoragePricing.query.filter_by(tier=tier).first()
+        if not pricing:
+            pricing = StoragePricing(tier=tier)
+
+        pricing.price_per_gb_month = price_per_gb
+        pricing.retention_days = retention_days
+        pricing.description = description
+        db.session.add(pricing)
+        db.session.commit()
+
+        return jsonify({'status': 'success', 'pricing': pricing.to_dict()})
+
+    # GET method - return current pricing
+    pricing = StoragePricing.query.all()
+    return jsonify([p.to_dict() for p in pricing])
+
+@admin_bp.route('/admin/storage/pricing/ui')
+@login_required
+def storage_pricing_ui():
+    """Storage pricing UI"""
+    require_admin_role()
+    return render_template('storage_pricing.html')
+
 
