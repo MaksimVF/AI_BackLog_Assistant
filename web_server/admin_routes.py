@@ -126,6 +126,12 @@ def manage_tariffs():
             discounts = request.form.get('discounts', '{}')
             access_features = request.form.get('access_features', '')
 
+            # Storage fields
+            included_storage_gb = float(request.form.get('included_storage_gb', 0.0))
+            additional_storage_price_per_gb = float(request.form.get('additional_storage_price_per_gb', 0.0))
+            storage_retention_days = int(request.form.get('storage_retention_days', 180))
+            storage_tier = request.form.get('storage_tier', 'standard')
+
             # Parse JSON fields
             try:
                 included_limits = json.loads(included_limits) if included_limits else {}
@@ -146,6 +152,11 @@ def manage_tariffs():
                 existing_plan.included_limits = included_limits
                 existing_plan.discounts = discounts
                 existing_plan.access_features = access_features_list
+                # Update storage fields
+                existing_plan.included_storage_gb = included_storage_gb
+                existing_plan.additional_storage_price_per_gb = additional_storage_price_per_gb
+                existing_plan.storage_retention_days = storage_retention_days
+                existing_plan.storage_tier = storage_tier
                 db.session.commit()
                 flash('Tariff plan updated successfully', 'success')
             else:
@@ -155,7 +166,11 @@ def manage_tariffs():
                     price_per_month=price_per_month,
                     included_limits=included_limits,
                     discounts=discounts,
-                    access_features=access_features_list
+                    access_features=access_features_list,
+                    included_storage_gb=included_storage_gb,
+                    additional_storage_price_per_gb=additional_storage_price_per_gb,
+                    storage_retention_days=storage_retention_days,
+                    storage_tier=storage_tier
                 )
                 db.session.add(new_plan)
                 db.session.commit()
@@ -311,7 +326,11 @@ def admin_tariffs_api():
                 "price_per_month": t.price_per_month,
                 "included_limits": t.included_limits,
                 "discounts": t.discounts,
-                "access_features": t.access_features
+                "access_features": t.access_features,
+                "included_storage_gb": t.included_storage_gb,
+                "additional_storage_price_per_gb": t.additional_storage_price_per_gb,
+                "storage_retention_days": t.storage_retention_days,
+                "storage_tier": t.storage_tier
             } for t in tariffs]
         })
 
@@ -335,6 +354,11 @@ def admin_tariffs_api():
             plan.included_limits = data.get('included_limits', {})
             plan.discounts = data.get('discounts', {})
             plan.access_features = data.get('access_features', [])
+            # Storage fields
+            plan.included_storage_gb = data.get('included_storage_gb', 0.0)
+            plan.additional_storage_price_per_gb = data.get('additional_storage_price_per_gb', 0.0)
+            plan.storage_retention_days = data.get('storage_retention_days', 180)
+            plan.storage_tier = data.get('storage_tier', 'standard')
 
             if not plan_id:
                 db.session.add(plan)
