@@ -762,6 +762,11 @@ def telegram_auth():
 if __name__ == '__main__':
     # Create uploads directory
     os.makedirs('uploads', exist_ok=True)
+
+    # Initialize background jobs
+    from web_server.background_jobs import init_background_jobs
+    init_background_jobs()
+
     app.run(debug=True, host='0.0.0.0', port=5000)
 
 

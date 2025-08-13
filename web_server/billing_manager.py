@@ -357,6 +357,100 @@ class BillingManager:
         return tariff_plan.access_features or []
 
     @staticmethod
+    def calculate_storage_costs(organization_id: str) -> Dict[str, Any]:
+        """
+        Calculate monthly storage costs for an organization.
+
+        Args:
+            organization_id: The organization ID
+
+        Returns:
+            Dict: Storage cost calculation including total cost and breakdown
+
+        Raises:
+            BillingException: For various billing errors
+        """
+        try:
+            # Get organization balance and tariff plan
+            org_balance = OrganizationBalance.query.filter_by(organization_id=organization_id).first()
+            if not org_balance:
+                raise BillingException("Organization balance not found", 404)
+
+            # Get all users in the organization to calculate total storage usage
+            # For now, we'll use a simplified approach - in production, this would
+            # query actual storage usage from the storage system
+            from ..models import User
+            users = User.query.filter_by(organization_id=organization_id).all()
+
+            total_storage_gb = 0.0
+            storage_by_tier = {}
+
+            for user in users:
+                # Convert MB to GB
+                user_storage_gb = user.storage_quota_mb / 1024 if user.storage_quota_mb else 0.0
+                total_storage_gb += user_storage_gb
+
+                # Track by storage tier
+                if user.storage_tier not in storage_by_tier:
+                    storage_by_tier[user.storage_tier] = 0.0
+                storage_by_tier[user.storage_tier] += user_storage_gb
+
+            # Calculate costs based on tariff plan and storage pricing
+            total_cost = 0.0
+            cost_breakdown = {}
+
+            if org_balance.tariff_plan_id:
+                # Get tariff plan storage pricing
+                tariff_plan = TariffPlan.query.get(org_balance.tariff_plan_id)
+                if tariff_plan:
+                    # Calculate included storage vs additional storage
+                    included_storage_gb = tariff_plan.included_storage_gb
+                    additional_storage_gb = max(0, total_storage_gb - included_storage_gb)
+
+                    # Cost for additional storage
+                    additional_cost = additional_storage_gb * tariff_plan.additional_storage_price_per_gb
+                    total_cost += additional_cost
+
+                    cost_breakdown['included_storage_gb'] = included_storage_gb
+                    cost_breakdown['additional_storage_gb'] = additional_storage_gb
+                    cost_breakdown['additional_storage_cost'] = additional_cost
+                else:
+                    # Fallback pricing if no tariff plan found
+                    additional_cost = total_storage_gb * 10.0  # Default price
+                    total_cost += additional_cost
+                    cost_breakdown['additional_storage_cost'] = additional_cost
+            else:
+                # Default pricing without tariff plan
+                additional_cost = total_storage_gb * 10.0  # Default price
+                total_cost += additional_cost
+                cost_breakdown['additional_storage_cost'] = additional_cost
+
+            # Add storage tier pricing if applicable
+            for tier, storage_gb in storage_by_tier.items():
+                if storage_gb > 0:
+                    # Get pricing for this tier
+                    storage_pricing = StoragePricing.query.filter_by(tier=tier).first()
+                    if storage_pricing and storage_pricing.price_per_gb_month > 0:
+                        tier_cost = storage_gb * storage_pricing.price_per_gb_month
+                        total_cost += tier_cost
+                        cost_breakdown[f'storage_cost_{tier}'] = tier_cost
+
+            return {
+                'status': 'success',
+                'total_storage_gb': total_storage_gb,
+                'total_monthly_cost': total_cost,
+                'cost_breakdown': cost_breakdown,
+                'storage_by_tier': storage_by_tier
+            }
+
+        except SQLAlchemyError as e:
+            db.session.rollback()
+            raise BillingException(f"Database error: {str(e)}", 500)
+        except Exception as e:
+            db.session.rollback()
+            raise e
+
+    @staticmethod
     def purchase_storage(organization_id: str, gb_amount: float) -> Dict[str, Any]:
         """
         Purchase additional storage for an organization.
