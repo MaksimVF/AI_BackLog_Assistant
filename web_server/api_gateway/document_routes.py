@@ -269,6 +269,47 @@ def analyze_document(current_user, current_email, current_role, document_id):
         current_app.logger.error(f"Document analysis error: {str(e)}")
         return jsonify({'error': f'Document analysis failed: {str(e)}'}), 500
 
+@api_gateway_bp.route('/api/v1/storage/costs', methods=['GET'])
+@token_required
+def calculate_storage_costs(current_user, current_email, current_role):
+    """
+    Calculate monthly storage costs for an organization.
+
+    Expected query parameters:
+    - organization_id: The organization ID to calculate costs for
+
+    Returns:
+    {
+        "status": "success",
+        "total_storage_gb": 15.5,
+        "total_monthly_cost": 50.0,
+        "cost_breakdown": {...},
+        "storage_by_tier": {...}
+    }
+    """
+    try:
+        organization_id = request.args.get('organization_id')
+        if not organization_id:
+            return jsonify({'error': 'organization_id is required'}), 400
+
+        # Calculate storage costs
+        try:
+            cost_result = BillingManager.calculate_storage_costs(
+                organization_id=organization_id
+            )
+
+            return jsonify(cost_result)
+
+        except BillingException as e:
+            return jsonify({'error': str(e), 'status_code': e.status_code}), e.status_code
+        except Exception as e:
+            current_app.logger.error(f"Storage cost calculation error: {str(e)}")
+            return jsonify({'error': f'Storage cost calculation failed: {str(e)}'}), 500
+
+    except Exception as e:
+        current_app.logger.error(f"Storage cost calculation error: {str(e)}")
+        return jsonify({'error': f'Storage cost calculation failed: {str(e)}'}), 500
+
 @api_gateway_bp.route('/api/v1/storage/purchase', methods=['POST'])
 @token_required
 def purchase_storage(current_user, current_email, current_role):

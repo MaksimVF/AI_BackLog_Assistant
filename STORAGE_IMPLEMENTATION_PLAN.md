@@ -61,12 +61,17 @@ This document outlines the phased implementation plan for enhancing storage mana
 **Goal**: Complete the integration with billing system and storage policy enforcement
 
 1. **Billing system integration**
-   - Update billing system to track storage costs
-   - Implement storage cost calculation
+   - ✅ Update billing system to track storage costs
+   - ✅ Implement storage cost calculation
+   - ✅ Add API endpoint for storage cost calculation
+   - ✅ Integrate storage pricing with tariff plans
 
 2. **Storage policy enforcement**
-   - Implement background job for storage cleanup
-   - Add expiration handling
+   - ✅ Implement background job for storage cleanup
+   - ✅ Add expiration handling
+   - ✅ Create storage management module
+   - ✅ Add API endpoints for storage management
+   - ✅ Implement retention policy enforcement
 
 ## Implementation Status
 
@@ -75,4 +80,4 @@ This document outlines the phased implementation plan for enhancing storage mana
 - [x] Stage 3: Tariff Plan Integration
 - [x] Stage 4: One-time Storage Purchase API
 - [x] Stage 5: UI Enhancements
-- [ ] Stage 6: Billing Integration and Enforcement
+- [x] Stage 6: Billing Integration and Enforcement

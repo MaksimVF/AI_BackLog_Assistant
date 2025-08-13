@@ -10,3 +10,4 @@ from . import document_routes
 from . import analysis_routes
 from . import user_routes
 from . import organization_routes
+from . import storage_routes
