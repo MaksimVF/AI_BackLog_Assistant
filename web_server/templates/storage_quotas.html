@@ -1,0 +1,193 @@
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Storage Quotas Management</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        body {
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h2 {
+            margin-bottom: 30px;
+            color: #343a40;
+        }
+        .user-item {
+            padding: 15px;
+            margin-bottom: 10px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            border-left: 4px solid #007bff;
+        }
+        .user-item:nth-child(even) {
+            background: #e9ecef;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .btn-primary {
+            background-color: #007bff;
+            border-color: #007bff;
+        }
+        .btn-primary:hover {
+            background-color: #0056b3;
+            border-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>User Storage Quotas Management</h2>
+
+        <div class="row">
+            <div class="col-md-6">
+                <h4>Update User Quota</h4>
+                <form id="quotaForm">
+                    <div class="form-group">
+                        <label for="userSelect">Select User</label>
+                        <select class="form-control" id="userSelect" required>
+                            <!-- Users will be populated here by JavaScript -->
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="quota_mb">Storage Quota (MB)</label>
+                        <input type="number" class="form-control" id="quota_mb" min="100" step="100" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="retention_days">Retention Days</label>
+                        <input type="number" class="form-control" id="retention_days" min="30" step="1" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="storage_tier">Storage Tier</label>
+                        <select class="form-control" id="storage_tier">
+                            <option value="free">Free</option>
+                            <option value="standard">Standard</option>
+                            <option value="premium">Premium</option>
+                            <option value="custom">Custom</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="storage_expiration">Expiration Date (optional)</label>
+                        <input type="date" class="form-control" id="storage_expiration">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Update Quota</button>
+                </form>
+            </div>
+
+            <div class="col-md-6">
+                <h4>Current User Quotas</h4>
+                <div id="userQuotasList">
+                    <!-- User quotas will be populated here by JavaScript -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const token = localStorage.getItem('token');
+            const userSelect = document.getElementById('userSelect');
+            const quotaForm = document.getElementById('quotaForm');
+            const userQuotasList = document.getElementById('userQuotasList');
+
+            // Fetch users and populate select dropdown
+            function loadUsers() {
+                fetch('/admin/storage/quotas', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                })
+                .then(response => response.json())
+                .then(users => {
+                    userSelect.innerHTML = '';
+                    userQuotasList.innerHTML = '';
+
+                    users.forEach(user => {
+                        // Add to select dropdown
+                        const option = document.createElement('option');
+                        option.value = user.user_id;
+                        option.textContent = `${user.username} (${user.quota_mb} MB)`;
+                        userSelect.appendChild(option);
+
+                        // Add to quotas list
+                        const userItem = document.createElement('div');
+                        userItem.className = 'user-item';
+                        userItem.innerHTML = `
+                            <h5>${user.username}</h5>
+                            <p><strong>Quota:</strong> ${user.quota_mb} MB</p>
+                            <p><strong>Retention:</strong> ${user.retention_days} days</p>
+                            <p><strong>Tier:</strong> ${user.storage_tier}</p>
+                            ${user.storage_expiration ? `<p><strong>Expiration:</strong> ${user.storage_expiration}</p>` : ''}
+                        `;
+                        userQuotasList.appendChild(userItem);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error loading users:', error);
+                    alert('Failed to load user data');
+                });
+            }
+
+            // Handle form submission
+            quotaForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+
+                const userId = userSelect.value;
+                const quotaMb = parseInt(document.getElementById('quota_mb').value);
+                const retentionDays = parseInt(document.getElementById('retention_days').value);
+                const storageTier = document.getElementById('storage_tier').value;
+                const storageExpiration = document.getElementById('storage_expiration').value;
+
+                const data = {
+                    user_id: userId,
+                    quota_mb: quotaMb,
+                    retention_days: retentionDays,
+                    storage_tier: storageTier
+                };
+
+                if (storageExpiration) {
+                    data.storage_expiration = storageExpiration;
+                }
+
+                fetch('/admin/storage/quotas', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(data)
+                })
+                .then(response => response.json())
+                .then(result => {
+                    if (result.status === 'success') {
+                        alert('User quota updated successfully');
+                        loadUsers(); // Refresh the list
+                    } else {
+                        alert('Error: ' + result.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error updating quota:', error);
+                    alert('Failed to update quota');
+                });
+            });
+
+            // Load users on page load
+            loadUsers();
+        });
+    </script>
+</body>
+</html>
+
+

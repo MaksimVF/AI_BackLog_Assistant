@@ -408,4 +408,69 @@ def storage_pricing_ui():
     require_admin_role()
     return render_template('storage_pricing.html')
 
+@admin_bp.route('/admin/storage/quotas/ui')
+@login_required
+def storage_quotas_ui():
+    """Storage quotas UI"""
+    require_admin_role()
+    return render_template('storage_quotas.html')
+
+@admin_bp.route('/admin/storage/quotas', methods=['GET', 'POST'])
+@login_required
+def manage_storage_quotas():
+    """Manage user storage quotas"""
+    require_admin_role()
+
+    if request.method == 'POST':
+        data = request.json
+        user_id = data.get('user_id')
+        quota_mb = data.get('quota_mb')
+        retention_days = data.get('retention_days')
+        storage_tier = data.get('storage_tier', 'free')
+        storage_expiration = data.get('storage_expiration')
+
+        if not user_id or quota_mb is None or retention_days is None:
+            return jsonify({'status': 'error', 'message': 'Missing required fields'}), 400
+
+        user = User.query.get(user_id)
+        if not user:
+            return jsonify({'status': 'error', 'message': 'User not found'}), 404
+
+        user.storage_quota_mb = quota_mb
+        user.storage_retention_days = retention_days
+        user.storage_tier = storage_tier
+
+        if storage_expiration:
+            try:
+                user.storage_expiration = datetime.fromisoformat(storage_expiration)
+            except (ValueError, TypeError):
+                return jsonify({'status': 'error', 'message': 'Invalid expiration date format'}), 400
+        else:
+            user.storage_expiration = None
+
+        db.session.commit()
+
+        return jsonify({
+            'status': 'success',
+            'user': {
+                'user_id': user.id,
+                'username': user.username,
+                'quota_mb': user.storage_quota_mb,
+                'retention_days': user.storage_retention_days,
+                'storage_tier': user.storage_tier,
+                'storage_expiration': user.storage_expiration.isoformat() if user.storage_expiration else None
+            }
+        })
+
+    # GET method - return user quotas
+    users = User.query.all()
+    return jsonify([{
+        'user_id': u.id,
+        'username': u.username,
+        'quota_mb': u.storage_quota_mb,
+        'retention_days': u.storage_retention_days,
+        'storage_tier': u.storage_tier,
+        'storage_expiration': u.storage_expiration.isoformat() if u.storage_expiration else None
+    } for u in users])
+
 
