@@ -118,20 +118,58 @@
                         Price: ${pricing.price_per_gb_month} RUB/GB/month<br>
                         Retention: ${pricing.retention_days} days<br>
                         Description: ${pricing.description || 'N/A'}
+                        <button class="edit-btn" data-tier="${pricing.tier}">Edit</button>
                     `;
                     pricingList.appendChild(div);
+                });
+
+                // Add edit functionality
+                document.querySelectorAll('.edit-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const tier = this.getAttribute('data-tier');
+                        // Find the pricing item
+                        const pricingItem = data.find(item => item.tier === tier);
+                        if (pricingItem) {
+                            // Populate form for editing
+                            document.getElementById('tier').value = pricingItem.tier;
+                            document.getElementById('price_per_gb').value = pricingItem.price_per_gb_month;
+                            document.getElementById('retention_days').value = pricingItem.retention_days;
+                            document.getElementById('description').value = pricingItem.description || '';
+                        }
+                    });
                 });
             });
 
         // Handle form submission
         document.getElementById('storagePricingForm').addEventListener('submit', function(e) {
             e.preventDefault();
+
+            // Validate inputs
+            const tier = document.getElementById('tier').value;
+            const pricePerGb = parseFloat(document.getElementById('price_per_gb').value);
+            const retentionDays = parseInt(document.getElementById('retention_days').value);
+
+            if (isNaN(pricePerGb) || pricePerGb < 0) {
+                alert('Please enter a valid price per GB');
+                return;
+            }
+
+            if (isNaN(retentionDays) || retentionDays < 1) {
+                alert('Please enter a valid retention period (minimum 1 day)');
+                return;
+            }
+
             const data = {
-                tier: document.getElementById('tier').value,
-                price_per_gb: parseFloat(document.getElementById('price_per_gb').value),
-                retention_days: parseInt(document.getElementById('retention_days').value),
+                tier: tier,
+                price_per_gb: pricePerGb,
+                retention_days: retentionDays,
                 description: document.getElementById('description').value
             };
+
+            // Confirm before submission
+            if (!confirm(`Are you sure you want to update pricing for ${tier} tier?`)) {
+                return;
+            }
 
             fetch('/admin/storage/pricing', {
                 method: 'POST',
@@ -150,6 +188,10 @@
                 } else {
                     alert('Error: ' + result.message);
                 }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while updating pricing');
             });
         });
     });

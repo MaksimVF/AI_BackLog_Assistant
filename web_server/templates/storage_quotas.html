@@ -101,6 +101,15 @@
             const quotaForm = document.getElementById('quotaForm');
             const userQuotasList = document.getElementById('userQuotasList');
 
+            // Create and add search input
+            const searchContainer = document.createElement('div');
+            searchContainer.style.marginBottom = '15px';
+            searchContainer.innerHTML = `
+                <input type="text" id="userSearch" class="form-control" placeholder="Search users...">
+            `;
+            userQuotasList.parentElement.insertBefore(searchContainer, userQuotasList);
+            const userSearch = document.getElementById('userSearch');
+
             // Fetch users and populate select dropdown
             function loadUsers() {
                 fetch('/admin/storage/quotas', {
@@ -123,14 +132,34 @@
                         // Add to quotas list
                         const userItem = document.createElement('div');
                         userItem.className = 'user-item';
+                        userItem.setAttribute('data-username', user.username.toLowerCase());
+                        userItem.setAttribute('data-user-id', user.user_id);
                         userItem.innerHTML = `
                             <h5>${user.username}</h5>
                             <p><strong>Quota:</strong> ${user.quota_mb} MB</p>
                             <p><strong>Retention:</strong> ${user.retention_days} days</p>
                             <p><strong>Tier:</strong> ${user.storage_tier}</p>
                             ${user.storage_expiration ? `<p><strong>Expiration:</strong> ${user.storage_expiration}</p>` : ''}
+                            <button class="edit-user-btn btn btn-sm btn-secondary" data-user-id="${user.user_id}">Edit</button>
                         `;
                         userQuotasList.appendChild(userItem);
+                    });
+
+                    // Add edit functionality
+                    document.querySelectorAll('.edit-user-btn').forEach(btn => {
+                        btn.addEventListener('click', function() {
+                            const userId = this.getAttribute('data-user-id');
+                            // Find the user item
+                            const userItem = users.find(user => user.user_id === userId);
+                            if (userItem) {
+                                // Populate form for editing
+                                userSelect.value = userItem.user_id;
+                                document.getElementById('quota_mb').value = userItem.quota_mb;
+                                document.getElementById('retention_days').value = userItem.retention_days;
+                                document.getElementById('storage_tier').value = userItem.storage_tier;
+                                document.getElementById('storage_expiration').value = userItem.storage_expiration ? userItem.storage_expiration.split('T')[0] : '';
+                            }
+                        });
                     });
                 })
                 .catch(error => {
@@ -143,9 +172,21 @@
             quotaForm.addEventListener('submit', function(e) {
                 e.preventDefault();
 
+                // Validate inputs
                 const userId = userSelect.value;
                 const quotaMb = parseInt(document.getElementById('quota_mb').value);
                 const retentionDays = parseInt(document.getElementById('retention_days').value);
+
+                if (isNaN(quotaMb) || quotaMb < 100) {
+                    alert('Please enter a valid storage quota (minimum 100 MB)');
+                    return;
+                }
+
+                if (isNaN(retentionDays) || retentionDays < 30) {
+                    alert('Please enter a valid retention period (minimum 30 days)');
+                    return;
+                }
+
                 const storageTier = document.getElementById('storage_tier').value;
                 const storageExpiration = document.getElementById('storage_expiration').value;
 
@@ -158,6 +199,12 @@
 
                 if (storageExpiration) {
                     data.storage_expiration = storageExpiration;
+                }
+
+                // Confirm before submission
+                const username = userSelect.options[userSelect.selectedIndex].text;
+                if (!confirm(`Are you sure you want to update storage quota for ${username}?`)) {
+                    return;
                 }
 
                 fetch('/admin/storage/quotas', {
@@ -180,6 +227,19 @@
                 .catch(error => {
                     console.error('Error updating quota:', error);
                     alert('Failed to update quota');
+                });
+            });
+
+            // Add search functionality
+            userSearch.addEventListener('input', function() {
+                const searchTerm = this.value.toLowerCase();
+                document.querySelectorAll('.user-item').forEach(item => {
+                    const username = item.getAttribute('data-username');
+                    if (username.includes(searchTerm)) {
+                        item.style.display = '';
+                    } else {
+                        item.style.display = 'none';
+                    }
                 });
             });
 
