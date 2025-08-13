@@ -10,7 +10,7 @@ from typing import Dict, Any, Optional
 from .extensions import db
 
 class TariffPlan(db.Model):
-    """Model for tariff plans with included limits and discounts."""
+    """Model for tariff plans with included limits, discounts, and storage options."""
     __tablename__ = 'tariff_plans'
 
     id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
@@ -21,6 +21,13 @@ class TariffPlan(db.Model):
     access_features = db.Column(db.JSON, nullable=False, default=list)  # Premium/exclusive features
     max_team_members = db.Column(db.Integer, default=1)  # Максимум членов команды
     member_price = db.Column(db.Float, default=0.0)  # Цена за дополнительного члена
+
+    # Storage-related fields
+    included_storage_gb = db.Column(db.Float, nullable=False, default=0.0)  # Included storage in GB
+    additional_storage_price_per_gb = db.Column(db.Float, nullable=False, default=0.0)  # Price for additional storage
+    storage_retention_days = db.Column(db.Integer, nullable=False, default=180)  # Default retention period
+    storage_tier = db.Column(db.String(20), nullable=False, default='standard')  # Storage tier (standard, premium, etc.)
+
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
 

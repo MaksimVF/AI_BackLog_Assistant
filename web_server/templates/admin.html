@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -276,6 +275,32 @@
                         <input type="text" id="access_features" name="access_features">
                     </div>
 
+                    <h4>Storage Options</h4>
+
+                    <div class="form-group">
+                        <label for="included_storage_gb">Included Storage (GB):</label>
+                        <input type="number" id="included_storage_gb" name="included_storage_gb" step="0.1" value="0.0">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="additional_storage_price_per_gb">Additional Storage Price per GB (RUB):</label>
+                        <input type="number" id="additional_storage_price_per_gb" name="additional_storage_price_per_gb" step="0.01" value="0.0">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="storage_retention_days">Storage Retention Days:</label>
+                        <input type="number" id="storage_retention_days" name="storage_retention_days" value="180">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="storage_tier">Storage Tier:</label>
+                        <select id="storage_tier" name="storage_tier">
+                            <option value="standard">Standard</option>
+                            <option value="premium">Premium</option>
+                            <option value="enterprise">Enterprise</option>
+                        </select>
+                    </div>
+
                     <button type="submit" class="btn">Save Plan</button>
                 </form>
 
@@ -285,6 +310,8 @@
                         <tr>
                             <th>Plan Name</th>
                             <th>Price (RUB)</th>
+                            <th>Storage (GB)</th>
+                            <th>Storage Price/GB</th>
                             <th>Features</th>
                             <th>Actions</th>
                         </tr>
@@ -294,6 +321,8 @@
                         <tr>
                             <td>{{ plan.name }}</td>
                             <td>{{ plan.price_per_month }}</td>
+                            <td>{{ plan.included_storage_gb }}</td>
+                            <td>{{ plan.additional_storage_price_per_gb }}</td>
                             <td>{{ plan.access_features|join(', ') }}</td>
                             <td>
                                 <form action="{{ url_for('admin.manage_tariffs') }}" method="post" style="display:inline;">

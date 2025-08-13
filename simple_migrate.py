@@ -4,87 +4,77 @@
 #!/usr/bin/env python3
 
 """
-Simple Database Migration Script for Storage Pricing
+Simple Database Migration Script for Storage Fields
 """
 
-from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
-from datetime import datetime
+import sqlite3
+import os
 
-# Create a minimal Flask app
-app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////workspace/AI_BackLog_Assistant/instance/site.db'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+def migrate_database():
+    """Migrate the database to include new storage fields."""
+    db_path = 'instance/site.db'
 
-db = SQLAlchemy(app)
+    if not os.path.exists(db_path):
+        print(f"Database file {db_path} not found")
+        return
 
-class StoragePricing(db.Model):
-    """Storage pricing configuration"""
-    __tablename__ = 'storage_pricing'
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
 
-    tier = db.Column(db.String(20), primary_key=True)  # free, standard, premium, custom
-    price_per_gb_month = db.Column(db.Float, nullable=False, default=0.0)
-    retention_days = db.Column(db.Integer, nullable=False, default=180)
-    description = db.Column(db.String(255), nullable=True)
-    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+    try:
+        # Add storage-related columns to tariff_plans
+        cursor.execute("""
+            ALTER TABLE tariff_plans
+            ADD COLUMN included_storage_gb FLOAT DEFAULT 0.0
+        """)
+        print("Added included_storage_gb column to tariff_plans")
+    except sqlite3.OperationalError as e:
+        if 'duplicate column' in str(e).lower():
+            print("included_storage_gb column already exists")
+        else:
+            print(f"Error adding included_storage_gb column: {e}")
 
-    def to_dict(self):
-        return {
-            'tier': self.tier,
-            'price_per_gb_month': self.price_per_gb_month,
-            'retention_days': self.retention_days,
-            'description': self.description,
-            'created_at': self.created_at.isoformat(),
-            'updated_at': self.updated_at.isoformat()
-        }
+    try:
+        cursor.execute("""
+            ALTER TABLE tariff_plans
+            ADD COLUMN additional_storage_price_per_gb FLOAT DEFAULT 0.0
+        """)
+        print("Added additional_storage_price_per_gb column to tariff_plans")
+    except sqlite3.OperationalError as e:
+        if 'duplicate column' in str(e).lower():
+            print("additional_storage_price_per_gb column already exists")
+        else:
+            print(f"Error adding additional_storage_price_per_gb column: {e}")
 
-def migrate():
-    """Migrate the database to add storage pricing table."""
-    with app.app_context():
-        # Create storage_pricing table
-        try:
-            db.create_all()  # This will create the storage_pricing table
-            print("Storage pricing table created successfully")
+    try:
+        cursor.execute("""
+            ALTER TABLE tariff_plans
+            ADD COLUMN storage_retention_days INTEGER DEFAULT 180
+        """)
+        print("Added storage_retention_days column to tariff_plans")
+    except sqlite3.OperationalError as e:
+        if 'duplicate column' in str(e).lower():
+            print("storage_retention_days column already exists")
+        else:
+            print(f"Error adding storage_retention_days column: {e}")
 
-            # Add default pricing tiers if they don't exist
-            if not StoragePricing.query.filter_by(tier='free').first():
-                free_tier = StoragePricing(
-                    tier='free',
-                    price_per_gb_month=0.0,
-                    retention_days=30,
-                    description='Free tier with limited storage'
-                )
-                db.session.add(free_tier)
+    try:
+        cursor.execute("""
+            ALTER TABLE tariff_plans
+            ADD COLUMN storage_tier VARCHAR(20) DEFAULT 'standard'
+        """)
+        print("Added storage_tier column to tariff_plans")
+    except sqlite3.OperationalError as e:
+        if 'duplicate column' in str(e).lower():
+            print("storage_tier column already exists")
+        else:
+            print(f"Error adding storage_tier column: {e}")
 
-            if not StoragePricing.query.filter_by(tier='standard').first():
-                standard_tier = StoragePricing(
-                    tier='standard',
-                    price_per_gb_month=10.0,
-                    retention_days=180,
-                    description='Standard storage tier'
-                )
-                db.session.add(standard_tier)
-
-            if not StoragePricing.query.filter_by(tier='premium').first():
-                premium_tier = StoragePricing(
-                    tier='premium',
-                    price_per_gb_month=20.0,
-                    retention_days=365,
-                    description='Premium storage tier'
-                )
-                db.session.add(premium_tier)
-
-            db.session.commit()
-            print("Default storage pricing tiers added")
-
-        except Exception as e:
-            db.session.rollback()
-            print(f"Error creating storage pricing table: {e}")
-
-        print("Storage database migration completed")
+    conn.commit()
+    conn.close()
+    print("Database migration completed")
 
 if __name__ == "__main__":
-    migrate()
+    migrate_database()
 
 
