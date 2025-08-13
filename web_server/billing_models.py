@@ -81,3 +81,27 @@ class FeatureConfig(db.Model):
 
     def __repr__(self):
         return f"FeatureConfig('{self.feature_name}', '{self.price_per_unit}')"
+
+class StoragePricing(db.Model):
+    """Storage pricing configuration"""
+    __tablename__ = 'storage_pricing'
+
+    tier = db.Column(db.String(20), primary_key=True)  # free, standard, premium, custom
+    price_per_gb_month = db.Column(db.Float, nullable=False, default=0.0)
+    retention_days = db.Column(db.Integer, nullable=False, default=180)
+    description = db.Column(db.String(255), nullable=True)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            'tier': self.tier,
+            'price_per_gb_month': self.price_per_gb_month,
+            'retention_days': self.retention_days,
+            'description': self.description,
+            'created_at': self.created_at.isoformat(),
+            'updated_at': self.updated_at.isoformat()
+        }
+
+    def __repr__(self):
+        return f"StoragePricing('{self.tier}', '{self.price_per_gb_month}')"

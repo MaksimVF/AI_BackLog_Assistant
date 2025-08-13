@@ -141,6 +141,7 @@
         <div class="nav">
             <a href="#llm-management">LLM Management</a>
             <a href="#tariff-management">Tariff Management</a>
+            <a href="#storage-management">Storage Management</a>
             <a href="#payment-history">Payment History</a>
             <a href="{{ url_for('logout') }}">Logout</a>
         </div>
@@ -305,6 +306,14 @@
                         {% endfor %}
                     </tbody>
                 </table>
+            </div>
+
+            <div class="section" id="storage-management">
+                <h2>Storage Management</h2>
+
+                <h3>Storage Pricing Configuration</h3>
+                <p>Manage storage pricing tiers and retention policies.</p>
+                <a href="{{ url_for('admin.storage_pricing_ui') }}" class="btn">Go to Storage Pricing</a>
             </div>
 
             <div class="section" id="payment-history">

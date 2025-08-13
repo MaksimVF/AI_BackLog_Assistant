@@ -54,6 +54,12 @@ class User(db.Model, UserMixin):
     role = db.Column(db.String(20), nullable=False, default='user')  # user, admin
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
+    # Storage quota fields
+    storage_quota_mb = db.Column(db.Integer, default=5120)  # 5GB default
+    storage_retention_days = db.Column(db.Integer, default=180)  # 6 months default
+    storage_tier = db.Column(db.String(20), default='free')
+    storage_expiration = db.Column(db.DateTime, nullable=True)  # For temporary storage
+
     def set_password(self, password):
         """Hash password using argon2"""
         self.password_hash = ph.hash(password)

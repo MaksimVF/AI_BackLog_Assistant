@@ -14,7 +14,7 @@ from config.llm_config import (
     get_llm_config, set_llm_config, add_model_config, remove_model_config,
     set_default_model, LLMModelConfig, LLMProvider
 )
-from .billing_models import TariffPlan, OrganizationBalance, UsageLog
+from .billing_models import TariffPlan, OrganizationBalance, UsageLog, StoragePricing
 from .billing_manager import BillingManager
 
 admin_bp = Blueprint('admin', __name__)
@@ -366,5 +366,111 @@ def admin_tariffs_api():
 
             return jsonify({"status": "error", "message": "Plan not found"}), 404
 
+
         return jsonify({"status": "error", "message": "Plan ID required"}), 400
+
+@admin_bp.route('/admin/storage/pricing', methods=['GET', 'POST'])
+@login_required
+def manage_storage_pricing():
+    """Manage storage pricing configuration"""
+    require_admin_role()
+
+    if request.method == 'POST':
+        data = request.json
+        tier = data.get('tier')
+        price_per_gb = data.get('price_per_gb')
+        retention_days = data.get('retention_days')
+        description = data.get('description', '')
+
+        if not tier or price_per_gb is None or retention_days is None:
+            return jsonify({'status': 'error', 'message': 'Missing required fields'}), 400
+
+        pricing = StoragePricing.query.filter_by(tier=tier).first()
+        if not pricing:
+            pricing = StoragePricing(tier=tier)
+
+        pricing.price_per_gb_month = price_per_gb
+        pricing.retention_days = retention_days
+        pricing.description = description
+        db.session.add(pricing)
+        db.session.commit()
+
+        return jsonify({'status': 'success', 'pricing': pricing.to_dict()})
+
+    # GET method - return current pricing
+    pricing = StoragePricing.query.all()
+    return jsonify([p.to_dict() for p in pricing])
+
+@admin_bp.route('/admin/storage/pricing/ui')
+@login_required
+def storage_pricing_ui():
+    """Storage pricing UI"""
+    require_admin_role()
+    return render_template('storage_pricing.html')
+
+@admin_bp.route('/admin/storage/quotas/ui')
+@login_required
+def storage_quotas_ui():
+    """Storage quotas UI"""
+    require_admin_role()
+    return render_template('storage_quotas.html')
+
+@admin_bp.route('/admin/storage/quotas', methods=['GET', 'POST'])
+@login_required
+def manage_storage_quotas():
+    """Manage user storage quotas"""
+    require_admin_role()
+
+    if request.method == 'POST':
+        data = request.json
+        user_id = data.get('user_id')
+        quota_mb = data.get('quota_mb')
+        retention_days = data.get('retention_days')
+        storage_tier = data.get('storage_tier', 'free')
+        storage_expiration = data.get('storage_expiration')
+
+        if not user_id or quota_mb is None or retention_days is None:
+            return jsonify({'status': 'error', 'message': 'Missing required fields'}), 400
+
+        user = User.query.get(user_id)
+        if not user:
+            return jsonify({'status': 'error', 'message': 'User not found'}), 404
+
+        user.storage_quota_mb = quota_mb
+        user.storage_retention_days = retention_days
+        user.storage_tier = storage_tier
+
+        if storage_expiration:
+            try:
+                user.storage_expiration = datetime.fromisoformat(storage_expiration)
+            except (ValueError, TypeError):
+                return jsonify({'status': 'error', 'message': 'Invalid expiration date format'}), 400
+        else:
+            user.storage_expiration = None
+
+        db.session.commit()
+
+        return jsonify({
+            'status': 'success',
+            'user': {
+                'user_id': user.id,
+                'username': user.username,
+                'quota_mb': user.storage_quota_mb,
+                'retention_days': user.storage_retention_days,
+                'storage_tier': user.storage_tier,
+                'storage_expiration': user.storage_expiration.isoformat() if user.storage_expiration else None
+            }
+        })
+
+    # GET method - return user quotas
+    users = User.query.all()
+    return jsonify([{
+        'user_id': u.id,
+        'username': u.username,
+        'quota_mb': u.storage_quota_mb,
+        'retention_days': u.storage_retention_days,
+        'storage_tier': u.storage_tier,
+        'storage_expiration': u.storage_expiration.isoformat() if u.storage_expiration else None
+    } for u in users])
+
 
