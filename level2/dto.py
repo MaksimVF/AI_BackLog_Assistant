@@ -68,7 +68,39 @@ class MoscowConfig(BaseModel):
     # порог близости дедлайна (в днях)
     deadline_days_threshold: int = 14
 
+
+
+class PurposeAlignmentConfig(BaseModel):
+    # веса: насколько важно совпадение с OKR (0..1)
+    goal_weight: float = 1.0
+    # порог совпадения для метки aligned
+    aligned_threshold: float = 0.6
+
+class ImpactMappingConfig(BaseModel):
+    # глубина следования по зависимостям (как глубоко думать)
+    depth: int = 2
+    # коэффициенты для веса влияния на акторов
+    actor_weight: float = 1.0
+
+class CostOfDelayConfig(BaseModel):
+    # единица времени для CoD — дни
+    value_per_time_unit_key: str = "value_per_day"
+    default_value_per_day: float = 0.0
+    # нормализовать CoD в 0..1 для комбинирования
+    cod_min: float = 0.0
+    cod_max: float = 10000.0
+
+class RoiConfig(BaseModel):
+    # ожидание horizon для расчёта (дни / месяцы)
+    horizon_days: int = 90
+    # default cost if not given
+    default_cost: float = 1.0
+    # default_expected_gain (можно из метаданных)
+    default_gain: float = 0.0
+
 class AnalysisConfig(BaseModel):
+
+
 
 
     methods: List[str] = Field(
@@ -81,7 +113,14 @@ class AnalysisConfig(BaseModel):
     rice: RiceConfig = RiceConfig()
     wsjf: WsjfConfig = WsjfConfig()
     kano: KanoConfig = KanoConfig()
+
     moscow: MoscowConfig = MoscowConfig()
+    # для стратегических агентов
+    purpose_alignment: PurposeAlignmentConfig = PurposeAlignmentConfig()
+    impact_mapping: ImpactMappingConfig = ImpactMappingConfig()
+    cost_of_delay: CostOfDelayConfig = CostOfDelayConfig()
+    roi: RoiConfig = RoiConfig()
+
 
 class MethodScore(BaseModel):
     method: str
