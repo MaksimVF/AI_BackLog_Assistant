@@ -3,6 +3,7 @@
 from fastapi import FastAPI
 from api.auth import router as auth_router
 from api.admin import router as admin_router
+from level2.api.router import router as level2_router
 from config.settings import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES
 
 app = FastAPI(
@@ -14,6 +15,7 @@ app = FastAPI(
 # Include routers
 app.include_router(auth_router, prefix="/auth", tags=["auth"])
 app.include_router(admin_router)
+app.include_router(level2_router)
 @app.get("/")
 async def root():
     """Root endpoint"""
