@@ -3,27 +3,10 @@
 
 
 import json
-import redis
-from deep_analysis_pipeline_v6 import DeepAnalysisPipeline
-
-# Настройка Redis
-redis_client = redis.StrictRedis(host='localhost', port=6379, db=0)
+from deep_analysis_pipeline_v7 import DeepAnalysisPipeline
 
 # Тестовая функция
 def test_deep_analysis_pipeline():
-    # Очистка очереди перед тестом
-    redis_client.delete('analysis_queue')
-
-    # Добавление тестовой задачи в очередь
-    test_task = {
-        "id": 1,
-        "name": "Test Task",
-        "importance": 7,
-        "satisfaction": 8,
-        "dissatisfaction": 2
-    }
-    redis_client.rpush('analysis_queue', json.dumps(test_task))
-
     # Создание и запуск конвейера
     pipeline = DeepAnalysisPipeline()
     task = pipeline.get_task_from_queue()
