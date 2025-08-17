@@ -7,22 +7,15 @@ from ..dto import Task, AnalysisConfig, TaskAnalysis, MethodScore, AnalysisResul
 from ..interfaces import Repository
 from ..scoring.rice import RiceAgent
 from ..scoring.moscow import MoSCoWAgent
+from ..scoring.wsjf import WSJFAgent
+from ..scoring.kano import KanoAgent
 from ..aggregator.weigh_combiner import combine_scores
-
-# Import other agents as needed
-# from ..scoring.kano import KanoAgent
-# from ..scoring.wsjf import WSJFAgent
-# from ..scoring.risk import RiskAgent
-# from ..scoring.value_effort import ValueEffortAgent
 
 AGENTS_REGISTRY = {
     "RICE": RiceAgent(),
     "MOSCOW": MoSCoWAgent(),
-    # Add other agents here
-    # "KANO": KanoAgent(),
-    # "WSJF": WSJFAgent(),
-    # "RISK": RiskAgent(),
-    # "VALUE_EFFORT": ValueEffortAgent(),
+    "WSJF": WSJFAgent(),
+    "KANO": KanoAgent(),
 }
 
 class Level2Orchestrator:
