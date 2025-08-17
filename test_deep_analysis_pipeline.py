@@ -3,7 +3,7 @@
 
 
 import json
-from deep_analysis_pipeline_v7 import DeepAnalysisPipeline
+from deep_analysis_pipeline_v8 import DeepAnalysisPipeline
 
 # Тестовая функция
 def test_deep_analysis_pipeline():
