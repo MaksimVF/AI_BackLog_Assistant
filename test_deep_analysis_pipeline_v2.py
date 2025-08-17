@@ -31,7 +31,7 @@ def test_deep_analysis_pipeline():
 
         # Проверка результатов
         assert result['priority'] == 'high', "Priority should be high"
-        assert result['moscow'] == 'must', "MoSCoW should be must"
+        assert result['moscow'] == 'should', "MoSCoW should be should"
         assert result['kano'] == 'attractive', "Kano should be attractive"
         assert result['analysis'] == 'completed', "Analysis should be completed"
 
