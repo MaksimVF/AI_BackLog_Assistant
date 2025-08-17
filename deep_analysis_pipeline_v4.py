@@ -15,7 +15,15 @@ from agents.kano_agent import KanoAgent
 redis_client = redis.StrictRedis(host='localhost', port=6379, db=0)
 
 # Настройка Weaviate
-weaviate_client = weaviate.WeaviateClient("http://localhost:8080")
+from weaviate.connect import ConnectionParams, WeaviateClient
+
+weaviate_client = WeaviateClient(
+    connection_params=ConnectionParams.http(
+        host="localhost",
+        port=8080,
+        secure=False
+    )
+)
 
 # Базовый класс для агентов
 class BaseAgent:
@@ -61,10 +69,15 @@ class DeepAnalysisPipeline:
 
     def save_task_to_weaviate(self, task: Dict):
         # Сохранение задачи в Weaviate
-        weaviate_client.data_object.create(
-            task,
-            "Task"
-        )
+        # Пример сохранения, нужно адаптировать под вашу схему
+        try:
+            weaviate_client.data.insert(
+                class_name="Task",
+                properties=task
+            )
+            print(f"Task {task['id']} saved to Weaviate")
+        except Exception as e:
+            print(f"Error saving to Weaviate: {e}")
 
 # Пример использования
 if __name__ == "__main__":
