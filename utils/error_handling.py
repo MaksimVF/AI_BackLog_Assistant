@@ -54,7 +54,7 @@ class AIBacklogError(Exception):
 
         log_data = {
             "error_code": self.error_code,
-            "message": str(self),
+            "error_message": str(self),
             "severity": self.severity.value,
             "context": self.context,
             "timestamp": self.timestamp
@@ -64,7 +64,7 @@ class AIBacklogError(Exception):
             log_data["original_error"] = str(self.original_exception)
             log_data["traceback"] = traceback.format_exc()
 
-        log_method(f"Error {self.error_code}: {self.message}", extra=log_data)
+        log_method(f"Error {self.error_code}: {str(self)}", extra=log_data)
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert error to dictionary for reporting"""

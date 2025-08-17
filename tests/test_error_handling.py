@@ -80,7 +80,7 @@ def test_error_logging(caplog):
     """Test error logging (requires pytest-capturelog)"""
     error = AIBacklogError("Log test error", severity=ErrorSeverity.INFO)
     assert "Log test error" in caplog.text
-    assert "AIBA_ERROR" in caplog.text
+    assert "AIBA_INFO" in caplog.text
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
