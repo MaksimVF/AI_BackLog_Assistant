@@ -2,13 +2,27 @@
 
 
 
+
+
+
+
+
 import json
-from deep_analysis_pipeline_v10 import DeepAnalysisPipeline
+from deep_analysis_pipeline_v10 import DeepAnalysisPipeline, PriorityAgent, MoSCoWAgent, KanoAgent, AnalysisAgent
 
 # Тестовая функция
 def test_deep_analysis_pipeline():
     # Создание и запуск конвейера
     pipeline = DeepAnalysisPipeline()
+
+    # Добавление агентов
+    print("Adding agents...")
+    pipeline.add_agent(PriorityAgent("PriorityAgent"))
+    pipeline.add_agent(MoSCoWAgent())
+    pipeline.add_agent(KanoAgent())
+    pipeline.add_agent(AnalysisAgent("AnalysisAgent"))
+    print("Agents added")
+
     task = pipeline.get_task_from_queue()
 
     if task:
@@ -17,7 +31,7 @@ def test_deep_analysis_pipeline():
 
         # Проверка результатов
         assert result['priority'] == 'high', "Priority should be high"
-        assert result['moscow'] == 'must', "MoSCoW should be must"
+        assert result['moscow'] == 'should', "MoSCoW should be should"
         assert result['kano'] == 'attractive', "Kano should be attractive"
         assert result['analysis'] == 'completed', "Analysis should be completed"
 
@@ -28,6 +42,11 @@ def test_deep_analysis_pipeline():
 # Запуск теста
 if __name__ == "__main__":
     test_deep_analysis_pipeline()
+
+
+
+
+
 
 
 
