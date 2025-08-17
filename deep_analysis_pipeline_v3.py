@@ -14,7 +14,7 @@ from agents.kano_agent import KanoAgent
 redis_client = redis.StrictRedis(host='localhost', port=6379, db=0)
 
 # Настройка Weaviate
-weaviate_client = weaviate.Client("http://localhost:8080")
+weaviate_client = weaviate.Client(url="http://localhost:8080")
 
 # Базовый класс для агентов
 class BaseAgent:
