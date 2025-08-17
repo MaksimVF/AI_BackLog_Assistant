@@ -148,5 +148,78 @@
 3. Какие риски и проблемы могут возникнуть на каждом этапе?
 4. Как будет организована синхронизация и взаимодействие между этапами?
 
+## Детализированные данные
+
+### Конкретные функции и модули
+- **Модули приоритизации и оценки**: MoSCoW, Stack Ranking, Value vs Effort, Kano Analysis, RICE/ICE Scoring, WSJF, Opportunity Scoring
+- **Модули стратегического анализа**: Purpose Alignment, Impact Mapping, Cost of Delay, ROI & Business Value
+- **Модули командной работы**: Voting & Consensus, Conflict Resolution, Stakeholder Alignment
+- **Модули аналитики и прогнозирования**: Trend Analysis, Risk Analysis, Dependency Mapping, Effort Forecasting, Forensic Analysis
+- **Модули визуализации**: Interactive Dashboard, Heatmap Generator, Dependency Graph, Timeline & Roadmap
+
+### Данные между уровнями
+- **Входные данные**: Задачи с базовой приоритизацией, метаданные, сырые данные
+- **Выходные данные**: Обновлённые приоритеты, аналитические метки, связи и зависимости
+
+### Требования к производительности и масштабируемости
+- **Производительность**: Пакетная обработка ≤ 5 сек на 100 задач
+- **Масштабируемость**: Возможность работы с 10–100 тыс. задач
+
+### Технологический стек
+- **Backend**: Python, FastAPI, Flask, Weaviate, PostgreSQL, Redis, Kafka
+- **Frontend**: React, Vue.js, D3.js, Chart.js
+- **Инфраструктура**: Docker, Kubernetes, GitHub Actions, Prometheus, Grafana
+
+## Архитектурная схема системы
+
+### Взаимодействие между уровнями
+
+```
+[ User Input ]
+      |
+      v
++------------------+
+|  1-й уровень     |
+|  (быстрый анализ)|
+| - Модальность    |
+| - Транскрипция   |
+| - RICE/ICE score |
++------------------+
+      |
+      |  Быстрая оценка
+      v
++------------------+
+| Weaviate (хранилище)|
++------------------+
+      |
+      |  Событие/триггер
+      v
++------------------+
+|   Очередь задач  |
+|   (Redis/Kafka)  |
++------------------+
+      |
+      v
++------------------+
+|  2-й уровень     |
+|  (глубокий анализ)|
+| - Kano, MoSCoW   |
+| - Impact Mapping |
+| - Risk Analysis  |
+| - What-if        |
++------------------+
+      |
+      v
++------------------+
+|  Weaviate update |
+| (обновлённые      |
+|  приоритеты,      |
+|  связи, метки)    |
++------------------+
+      |
+      v
+[ User sees results ]
+```
+
 
 
