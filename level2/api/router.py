@@ -17,11 +17,17 @@ from ..api.dto import StrategicAnalysisRequest, StrategicAnalysisResult
 from ..db.models import StrategicAnalysisSnapshot
 from ..db.repo import StrategicRepo
 from ..strategy.orchestrator import StrategicOrchestrator
+# from ..teamwork.api.router import router as teamwork_router
 from sqlalchemy.ext.asyncio import AsyncSession
 from ..db.session import get_async_session
 import weaviate
 
+
 router = APIRouter(prefix="/level2", tags=["level2"])
+
+# Include teamwork router
+# router.include_router(teamwork_router, prefix="/teamwork", tags=["Teamwork"])
+
 
 class AnalyzeRequest(BaseModel):
     project_id: str
