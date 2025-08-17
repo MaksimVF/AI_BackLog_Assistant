@@ -10,6 +10,7 @@ class OpportunityScoringAgent:
     – Оценивает фичу по двум осям: Importance (важность) и Satisfaction (удовлетворённость текущим решением).
     – Приоритет = Importance - Satisfaction.
     """
+    name = "OPPORTUNITY"
 
     def score(self, task: Task, config: AnalysisConfig) -> Tuple[float, Dict, Dict]:
         importance = float(task.metadata.get("importance", 5))     # 0–10

@@ -7,6 +7,7 @@ class StackRankingAgent:
     Агент для упорядочивания задач по пользовательскому приоритету.
     Основа — явные приоритеты (0–100) или голосование стейкхолдеров.
     """
+    name = "STACK_RANKING"
 
     def score(self, task: Task, config: AnalysisConfig) -> Tuple[float, Dict, Dict]:
         base_priority = float(task.metadata.get("priority", 50))  # дефолт 50
