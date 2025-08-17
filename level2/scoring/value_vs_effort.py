@@ -8,6 +8,7 @@ class ValueVsEffortAgent:
     Агент для матричного анализа Value vs Effort.
     Идея: высокая ценность при низких усилиях = top priority.
     """
+    name = "VALUE_EFFORT"
 
     def score(self, task: Task, config: AnalysisConfig) -> Tuple[float, Dict, Dict]:
         value = float(task.metadata.get("value", 5))   # 0–10
