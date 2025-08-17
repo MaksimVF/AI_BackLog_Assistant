@@ -4,7 +4,7 @@
 
 import json
 import redis
-from deep_analysis_pipeline_v4 import DeepAnalysisPipeline
+from deep_analysis_pipeline_v5 import DeepAnalysisPipeline
 
 # Настройка Redis
 redis_client = redis.StrictRedis(host='localhost', port=6379, db=0)

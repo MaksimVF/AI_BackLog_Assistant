@@ -1,0 +1,106 @@
+
+
+
+
+
+
+import json
+import time
+import redis
+import weaviate
+from typing import Dict, List
+from agents.moscow_agent import MoSCoWAgent
+from agents.kano_agent import KanoAgent
+
+# Настройка Redis
+redis_client = redis.StrictRedis(host='localhost', port=6379, db=0)
+
+# Настройка Weaviate
+weaviate_client = weaviate.connect_to_local(
+    host="localhost",
+    port=8080,
+    grpc_port=50051,
+    headers=None
+)
+
+# Базовый класс для агентов
+class BaseAgent:
+    def __init__(self, name: str):
+        self.name = name
+
+    def process(self, task: Dict) -> Dict:
+        raise NotImplementedError("Метод process должен быть реализован в подклассе")
+
+# Пример агента для приоритизации
+class PriorityAgent(BaseAgent):
+    def process(self, task: Dict) -> Dict:
+        # Пример логики приоритизации
+        task['priority'] = 'high' if task.get('importance', 0) > 5 else 'low'
+        return task
+
+# Пример агента для анализа
+class AnalysisAgent(BaseAgent):
+    def process(self, task: Dict) -> Dict:
+        # Пример логики анализа
+        task['analysis'] = 'completed'
+        return task
+
+# Конвейер второго уровня
+class DeepAnalysisPipeline:
+    def __init__(self):
+        self.agents = []
+
+    def add_agent(self, agent: BaseAgent):
+        self.agents.append(agent)
+
+    def process_task(self, task: Dict) -> Dict:
+        for agent in self.agents:
+            task = agent.process(task)
+        return task
+
+    def get_task_from_queue(self) -> Dict:
+        # Получение задачи из очереди Redis
+        task_data = redis_client.lpop('analysis_queue')
+        if task_data:
+            return json.loads(task_data)
+        return None
+
+    def save_task_to_weaviate(self, task: Dict):
+        # Сохранение задачи в Weaviate
+        # Пример сохранения, нужно адаптировать под вашу схему
+        try:
+            weaviate_client.data.insert(
+                class_name="Task",
+                properties=task
+            )
+            print(f"Task {task['id']} saved to Weaviate")
+        except Exception as e:
+            print(f"Error saving to Weaviate: {e}")
+
+# Пример использования
+if __name__ == "__main__":
+    # Создание конвейера
+    pipeline = DeepAnalysisPipeline()
+
+    # Добавление агентов
+    pipeline.add_agent(PriorityAgent("PriorityAgent"))
+    pipeline.add_agent(MoSCoWAgent())
+    pipeline.add_agent(KanoAgent())
+    pipeline.add_agent(AnalysisAgent("AnalysisAgent"))
+
+    # Получение задачи из очереди
+    task = pipeline.get_task_from_queue()
+    if task:
+        # Обработка задачи
+        result = pipeline.process_task(task)
+        print("Processed Task:", json.dumps(result, indent=2))
+
+        # Сохранение результата в Weaviate
+        pipeline.save_task_to_weaviate(result)
+    else:
+        print("No tasks in the queue")
+
+
+
+
+
