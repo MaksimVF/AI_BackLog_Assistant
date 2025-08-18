@@ -19,35 +19,40 @@
 
 
 
+
 from typing import List, Dict, Any, Type
-from level2.prioritization.prioritization_aggregator import PrioritizationAggregator
-from level2.strategy.strategy_aggregator import StrategyAggregator
-from level2.teamwork.teamwork_aggregator import TeamworkAggregator
-from level2.analytics.analytics_aggregator import AnalyticsAggregator
-from level2.visualization.visualization_aggregator import VisualizationAggregator
-from pipelines.second_level_pipeline import SecondLevelPipeline
+from config.config import PipelineConfig, AgentConfig
 from pipelines.modality_processing_pipeline import ModalityProcessingPipeline
 from pipelines.data_manipulation_pipeline import DataManipulationPipeline
 from pipelines.data_output_pipeline import DataOutputPipeline
+from pipelines.second_level_pipeline import SecondLevelPipeline
 
 class FirstLevelPipeline:
     """
     Первый уровень анализа: базовая обработка задач.
     """
 
-    def __init__(self, modules: Dict[str, Type] = None):
+    def __init__(self, config: PipelineConfig = None):
         """
-        Инициализация конвейера с динамической загрузкой модулей.
-        :param modules: словарь модулей, где ключ — имя модуля, значение — класс модуля
+        Инициализация конвейера с конфигурацией.
+        :param config: конфигурация конвейера
         """
-        if modules is None:
-            modules = {
-                "modality_processing": ModalityProcessingPipeline,
-                "data_manipulation": DataManipulationPipeline,
-                "data_output": DataOutputPipeline,
-                "second_level": SecondLevelPipeline
-            }
-        self.modules = {name: cls() for name, cls in modules.items()}
+        if config is None:
+            config = PipelineConfig(
+                name="first_level",
+                agents=[
+                    AgentConfig(name="modality_processing", enabled=True),
+                    AgentConfig(name="data_manipulation", enabled=True),
+                    AgentConfig(name="data_output", enabled=True),
+                    AgentConfig(name="second_level", enabled=True)
+                ]
+            )
+        self.config = config
+        self.modules = {
+            agent.name: globals()[agent.name.replace("_", " ").title().replace(" ", "")]()
+            for agent in self.config.agents
+            if agent.enabled
+        }
 
     async def run(self, tasks: List[Dict[str, Any]]) -> Dict[str, Any]:
         """
@@ -73,6 +78,7 @@ class FirstLevelPipeline:
         results["second_level"] = await self.modules["second_level"].run(prepared_tasks)
 
         return results
+
 
 
 

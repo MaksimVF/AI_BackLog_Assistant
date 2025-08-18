@@ -18,7 +18,9 @@
 
 
 
+
 from typing import Dict, Type
+from config.config import PipelineConfig, AgentConfig
 from level2.prioritization.prioritization_aggregator import PrioritizationAggregator
 from level2.strategy.strategy_aggregator import StrategyAggregator
 from level2.teamwork.teamwork_aggregator import TeamworkAggregator
@@ -31,20 +33,28 @@ class SecondLevelPipeline:
     Управляет всеми агрегаторами (модулями).
     """
 
-    def __init__(self, modules: Dict[str, Type] = None):
+    def __init__(self, config: PipelineConfig = None):
         """
-        Инициализация конвейера с динамической загрузкой модулей.
-        :param modules: словарь модулей, где ключ — имя модуля, значение — класс модуля
+        Инициализация конвейера с конфигурацией.
+        :param config: конфигурация конвейера
         """
-        if modules is None:
-            modules = {
-                "prioritization": PrioritizationAggregator,
-                "strategy": StrategyAggregator,
-                "teamwork": TeamworkAggregator,
-                "analytics": AnalyticsAggregator,
-                "visualization": VisualizationAggregator
-            }
-        self.modules = {name: cls() for name, cls in modules.items()}
+        if config is None:
+            config = PipelineConfig(
+                name="second_level",
+                agents=[
+                    AgentConfig(name="prioritization", enabled=True),
+                    AgentConfig(name="strategy", enabled=True),
+                    AgentConfig(name="teamwork", enabled=True),
+                    AgentConfig(name="analytics", enabled=True),
+                    AgentConfig(name="visualization", enabled=True)
+                ]
+            )
+        self.config = config
+        self.modules = {
+            agent.name: globals()[agent.name.capitalize() + "Aggregator"]()
+            for agent in self.config.agents
+            if agent.enabled
+        }
 
     async def run(self, tasks: list, modules: list = None) -> dict:
         """
@@ -65,6 +75,7 @@ class SecondLevelPipeline:
                 results[module] = await self.modules[module].run(tasks)
 
         return results
+
 
 
 
