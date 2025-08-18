@@ -33,8 +33,8 @@ from typing import List
 from pipelines.first_level_pipeline import FirstLevelPipeline
 from pipelines.second_level_pipeline import SecondLevelPipeline
 from db.session import get_async_session
-from db.models import Task, Run, Result
-from db.repo_optimized import TaskRepo, RunRepo, ResultRepo
+from db.models import Task, Run, Result, User
+from db.repo_optimized import TaskRepo, RunRepo, ResultRepo, UserRepo
 import logging
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
@@ -44,6 +44,8 @@ from fastapi_cache.backends.redis import RedisBackend
 from fastapi_cache.decorator import cache
 import aioredis
 import os
+from api.auth import get_current_user, get_current_admin_user
+from api.validation import TaskCreate, TaskUpdate, RunCreate, RunUpdate, ResultCreate, ResultUpdate, UserCreate, UserUpdate, UserLogin
 
 # Настройка логгера
 logger = logging.getLogger(__name__)
@@ -70,7 +72,7 @@ async def startup():
     FastAPICache.init(RedisBackend(redis), prefix="fastapi-cache")
 
 @app.post("/run_pipeline")
-async def run_pipeline(tasks: List[dict], session: AsyncSession = Depends(get_async_session)):
+async def run_pipeline(tasks: List[dict], session: AsyncSession = Depends(get_async_session), current_user: User = Depends(get_current_user)):
     try:
         pipeline = FirstLevelPipeline()
         results = await pipeline.run(tasks)
@@ -80,7 +82,7 @@ async def run_pipeline(tasks: List[dict], session: AsyncSession = Depends(get_as
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/run_second_level")
-async def run_second_level(tasks: List[dict], session: AsyncSession = Depends(get_async_session)):
+async def run_second_level(tasks: List[dict], session: AsyncSession = Depends(get_async_session), current_user: User = Depends(get_current_user)):
     try:
         pipeline = SecondLevelPipeline()
         results = await pipeline.run(tasks)
@@ -90,10 +92,12 @@ async def run_second_level(tasks: List[dict], session: AsyncSession = Depends(ge
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/tasks")
-async def create_task(task: Task, session: AsyncSession = Depends(get_async_session)):
+async def create_task(task: TaskCreate, session: AsyncSession = Depends(get_async_session), current_user: User = Depends(get_current_user)):
     try:
         repo = TaskRepo(session)
-        await repo.create(task)
+        task_dict = task.dict()
+        task_obj = Task(**task_dict)
+        await repo.create(task_obj)
         return {"message": "Task created successfully"}
     except Exception as e:
         logger.error(f"Error creating task: {e}")
@@ -101,7 +105,7 @@ async def create_task(task: Task, session: AsyncSession = Depends(get_async_sess
 
 @app.get("/tasks")
 @cache(expire=60)
-async def get_tasks(session: AsyncSession = Depends(get_async_session)):
+async def get_tasks(session: AsyncSession = Depends(get_async_session), current_user: User = Depends(get_current_user)):
     try:
         repo = TaskRepo(session)
         tasks = await repo.get_all()
@@ -111,10 +115,12 @@ async def get_tasks(session: AsyncSession = Depends(get_async_session)):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/runs")
-async def create_run(run: Run, session: AsyncSession = Depends(get_async_session)):
+async def create_run(run: RunCreate, session: AsyncSession = Depends(get_async_session), current_user: User = Depends(get_current_user)):
     try:
         repo = RunRepo(session)
-        await repo.create(run)
+        run_dict = run.dict()
+        run_obj = Run(**run_dict)
+        await repo.create(run_obj)
         return {"message": "Run created successfully"}
     except Exception as e:
         logger.error(f"Error creating run: {e}")
@@ -122,7 +128,7 @@ async def create_run(run: Run, session: AsyncSession = Depends(get_async_session
 
 @app.get("/runs")
 @cache(expire=60)
-async def get_runs(session: AsyncSession = Depends(get_async_session)):
+async def get_runs(session: AsyncSession = Depends(get_async_session), current_user: User = Depends(get_current_user)):
     try:
         repo = RunRepo(session)
         runs = await repo.get_all()
@@ -132,10 +138,12 @@ async def get_runs(session: AsyncSession = Depends(get_async_session)):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/results")
-async def create_result(result: Result, session: AsyncSession = Depends(get_async_session)):
+async def create_result(result: ResultCreate, session: AsyncSession = Depends(get_async_session), current_user: User = Depends(get_current_user)):
     try:
         repo = ResultRepo(session)
-        await repo.create(result)
+        result_dict = result.dict()
+        result_obj = Result(**result_dict)
+        await repo.create(result_obj)
         return {"message": "Result created successfully"}
     except Exception as e:
         logger.error(f"Error creating result: {e}")
@@ -143,7 +151,7 @@ async def create_result(result: Result, session: AsyncSession = Depends(get_asyn
 
 @app.get("/results")
 @cache(expire=60)
-async def get_results(session: AsyncSession = Depends(get_async_session)):
+async def get_results(session: AsyncSession = Depends(get_async_session), current_user: User = Depends(get_current_user)):
     try:
         repo = ResultRepo(session)
         results = await repo.get_all()
@@ -151,6 +159,52 @@ async def get_results(session: AsyncSession = Depends(get_async_session)):
     except Exception as e:
         logger.error(f"Error getting results: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/users")
+async def create_user(user: UserCreate, session: AsyncSession = Depends(get_async_session), current_user: User = Depends(get_current_admin_user)):
+    try:
+        repo = UserRepo(session)
+        user_dict = user.dict()
+        user_obj = User(**user_dict)
+        await repo.create(user_obj)
+        return {"message": "User created successfully"}
+    except Exception as e:
+        logger.error(f"Error creating user: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/users")
+@cache(expire=60)
+async def get_users(session: AsyncSession = Depends(get_async_session), current_user: User = Depends(get_current_admin_user)):
+    try:
+        repo = UserRepo(session)
+        users = await repo.get_all()
+        return users
+    except Exception as e:
+        logger.error(f"Error getting users: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.put("/users/{user_id}")
+async def update_user(user_id: int, user: UserUpdate, session: AsyncSession = Depends(get_async_session), current_user: User = Depends(get_current_admin_user)):
+    try:
+        repo = UserRepo(session)
+        user_dict = user.dict(exclude_unset=True)
+        user_obj = await repo.update(user_id, user_dict)
+        return {"message": "User updated successfully"}
+    except Exception as e:
+        logger.error(f"Error updating user: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.delete("/users/{user_id}")
+async def delete_user(user_id: int, session: AsyncSession = Depends(get_async_session), current_user: User = Depends(get_current_admin_user)):
+    try:
+        repo = UserRepo(session)
+        await repo.delete(user_id)
+        return {"message": "User deleted successfully"}
+    except Exception as e:
+        logger.error(f"Error deleting user: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 
 
 
