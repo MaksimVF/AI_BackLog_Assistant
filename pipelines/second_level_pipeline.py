@@ -19,6 +19,7 @@
 
 
 
+
 from typing import Dict, Type
 from config.config import PipelineConfig, AgentConfig
 from level2.prioritization.prioritization_aggregator import PrioritizationAggregator
@@ -26,6 +27,11 @@ from level2.strategy.strategy_aggregator import StrategyAggregator
 from level2.teamwork.teamwork_aggregator import TeamworkAggregator
 from level2.analytics.analytics_aggregator import AnalyticsAggregator
 from level2.visualization.visualization_aggregator import VisualizationAggregator
+import logging
+
+# Настройка логгера
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
 
 class SecondLevelPipeline:
     """
@@ -50,11 +56,16 @@ class SecondLevelPipeline:
                 ]
             )
         self.config = config
-        self.modules = {
-            agent.name: globals()[agent.name.capitalize() + "Aggregator"]()
-            for agent in self.config.agents
-            if agent.enabled
-        }
+        self.modules = {}
+        for agent in self.config.agents:
+            if agent.enabled:
+                try:
+                    module_class = globals()[agent.name.capitalize() + "Aggregator"]
+                    self.modules[agent.name] = module_class()
+                except KeyError:
+                    logger.error(f"Module {agent.name} not found")
+                except Exception as e:
+                    logger.error(f"Error initializing module {agent.name}: {e}")
 
     async def run(self, tasks: list, modules: list = None) -> dict:
         """
@@ -72,9 +83,14 @@ class SecondLevelPipeline:
 
         for module in modules:
             if module in self.modules:
-                results[module] = await self.modules[module].run(tasks)
+                try:
+                    results[module] = await self.modules[module].run(tasks)
+                except Exception as e:
+                    logger.error(f"Error running module {module}: {e}")
+                    results[module] = {"error": str(e)}
 
         return results
+
 
 
 
