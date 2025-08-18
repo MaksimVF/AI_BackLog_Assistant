@@ -1,0 +1,27 @@
+
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Vote Form</title>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+</head>
+<body>
+    <h2>Голосование</h2>
+    <form hx-post="/ui/teamwork/vote" hx-target="#result" hx-swap="innerHTML">
+        <label>Project ID: <input type="text" name="project_id" value="p1" required></label><br>
+        <label>Task ID: <input type="text" name="task_id" value="t1" required></label><br>
+        <label>Voter ID: <input type="text" name="voter_id" value="u1" required></label><br>
+        <label>Vote:
+            <select name="value">
+                <option value="yes">Yes</option>
+                <option value="no">No</option>
+                <option value="abstain">Abstain</option>
+            </select>
+        </label><br>
+        <button type="submit">Отправить голос</button>
+    </form>
+    <div id="result"></div>
+</body>
+</html>
+
