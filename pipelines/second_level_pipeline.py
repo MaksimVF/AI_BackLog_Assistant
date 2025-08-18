@@ -14,6 +14,11 @@
 
 
 
+
+
+
+
+from typing import Dict, Type
 from level2.prioritization.prioritization_aggregator import PrioritizationAggregator
 from level2.strategy.strategy_aggregator import StrategyAggregator
 from level2.teamwork.teamwork_aggregator import TeamworkAggregator
@@ -26,12 +31,20 @@ class SecondLevelPipeline:
     Управляет всеми агрегаторами (модулями).
     """
 
-    def __init__(self):
-        self.prioritization = PrioritizationAggregator()
-        self.strategy = StrategyAggregator()
-        self.teamwork = TeamworkAggregator()
-        self.analytics = AnalyticsAggregator()
-        self.visualization = VisualizationAggregator()
+    def __init__(self, modules: Dict[str, Type] = None):
+        """
+        Инициализация конвейера с динамической загрузкой модулей.
+        :param modules: словарь модулей, где ключ — имя модуля, значение — класс модуля
+        """
+        if modules is None:
+            modules = {
+                "prioritization": PrioritizationAggregator,
+                "strategy": StrategyAggregator,
+                "teamwork": TeamworkAggregator,
+                "analytics": AnalyticsAggregator,
+                "visualization": VisualizationAggregator
+            }
+        self.modules = {name: cls() for name, cls in modules.items()}
 
     async def run(self, tasks: list, modules: list = None) -> dict:
         """
@@ -44,22 +57,18 @@ class SecondLevelPipeline:
         """
         results = {}
 
-        if modules is None or "prioritization" in modules:
-            results["prioritization"] = await self.prioritization.run(tasks)
+        if modules is None:
+            modules = list(self.modules.keys())
 
-        if modules is None or "strategy" in modules:
-            results["strategy"] = await self.strategy.run(tasks)
-
-        if modules is None or "teamwork" in modules:
-            results["teamwork"] = await self.teamwork.run(tasks)
-
-        if modules is None or "analytics" in modules:
-            results["analytics"] = await self.analytics.run(tasks)
-
-        if modules is None or "visualization" in modules:
-            results["visualization"] = await self.visualization.run(tasks)
+        for module in modules:
+            if module in self.modules:
+                results[module] = await self.modules[module].run(tasks)
 
         return results
+
+
+
+
 
 
 
