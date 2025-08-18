@@ -23,6 +23,10 @@
 
 
 
+
+
+
+
 from fastapi import FastAPI, HTTPException, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
@@ -35,6 +39,11 @@ import logging
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import ORJSONResponse
+from fastapi_cache import FastAPICache
+from fastapi_cache.backends.redis import RedisBackend
+from fastapi_cache.decorator import cache
+import aioredis
+import os
 
 # Настройка логгера
 logger = logging.getLogger(__name__)
@@ -51,6 +60,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.add_middleware(GZipMiddleware, minimum_size=1000)
+
+# Настройка Redis для кэширования
+REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+
+@app.on_event("startup")
+async def startup():
+    redis = aioredis.from_url(REDIS_URL, encoding="utf8", decode_responses=True)
+    FastAPICache.init(RedisBackend(redis), prefix="fastapi-cache")
 
 @app.post("/run_pipeline")
 async def run_pipeline(tasks: List[dict], session: AsyncSession = Depends(get_async_session)):
@@ -83,6 +100,7 @@ async def create_task(task: Task, session: AsyncSession = Depends(get_async_sess
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/tasks")
+@cache(expire=60)
 async def get_tasks(session: AsyncSession = Depends(get_async_session)):
     try:
         repo = TaskRepo(session)
@@ -103,6 +121,7 @@ async def create_run(run: Run, session: AsyncSession = Depends(get_async_session
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/runs")
+@cache(expire=60)
 async def get_runs(session: AsyncSession = Depends(get_async_session)):
     try:
         repo = RunRepo(session)
@@ -123,6 +142,7 @@ async def create_result(result: Result, session: AsyncSession = Depends(get_asyn
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/results")
+@cache(expire=60)
 async def get_results(session: AsyncSession = Depends(get_async_session)):
     try:
         repo = ResultRepo(session)
@@ -131,6 +151,9 @@ async def get_results(session: AsyncSession = Depends(get_async_session)):
     except Exception as e:
         logger.error(f"Error getting results: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+
 
 
 
