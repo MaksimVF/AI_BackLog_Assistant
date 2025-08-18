@@ -36,6 +36,17 @@ class StakeholderAlignmentRecord(Base):
     details = Column(JSONB, nullable=True)
     created_at = Column(TIMESTAMP(timezone=True), server_default=text("now()"))
 
+class PredictiveAnalysisSnapshot(Base):
+    __tablename__ = "predictive_analysis_snapshots"
+    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    project_id = Column(String, nullable=True)
+    task_id = Column(String, nullable=True)
+    agent = Column(String, nullable=False)
+    score = Column(Float, nullable=True)
+    details = Column(JSONB, nullable=True)
+    labels = Column(JSONB, nullable=True)
+    created_at = Column(TIMESTAMP(timezone=True), server_default=text("now()"))
+
 
 
 
