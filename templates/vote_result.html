@@ -1,0 +1,18 @@
+
+
+
+<div>
+    <h3>Результаты голосования</h3>
+    <p>Task: {{ result.task_id }}</p>
+    <p>Quorum: {{ result.quorum }}</p>
+    <p>Decision: {{ result.decision }}</p>
+    <p>Consensus: {{ result.consensus }}</p>
+    <h4>Breakdown:</h4>
+    <ul>
+        {% for v in result.breakdown.participants %}
+        <li>{{ v.voter_id }} → {{ v.bin }} (weight={{ v.weight }})</li>
+        {% endfor %}
+    </ul>
+</div>
+
+

@@ -1,4 +1,8 @@
 
+
+
+
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
@@ -6,6 +10,8 @@ from ...teamwork.dto import VoteRequest, VoteResult, VotingConfig, ConflictConfi
 from ...teamwork.orchestrator import TeamworkOrchestrator
 from ...db.repo_teamwork import TeamworkRepo
 from ...db.session import get_async_session
+from .ui_router import router as ui_router
+from .heatmap import router as heatmap_router
 
 router = APIRouter(prefix="/teamwork", tags=["Teamwork"])
 
@@ -41,3 +47,11 @@ async def alignment_endpoint(task_payload: dict, session: AsyncSession = Depends
     score, details, labels = orch.stakeholder_alignment(t, cfg, project_stakeholders=task_payload.get("project_stakeholders"))
     await repo.save_alignment(task_payload.get("project_id"), t.id, score, details)
     return {"score": score, "details": details, "labels": labels}
+
+# Include UI and heatmap routers
+router.include_router(ui_router)
+router.include_router(heatmap_router)
+
+
+
+

@@ -1,0 +1,68 @@
+
+
+
+
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dashboard — {{ project_id }}</title>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid #ccc;
+            padding: 6px;
+            text-align: center;
+        }
+        th {
+            background-color: #f0f0f0;
+        }
+    </style>
+</head>
+<body>
+    <h2>Результаты голосований (Project: {{ project_id }})</h2>
+
+    <h3>Heatmap голосований</h3>
+    {% if project_id %}
+    <img src="/ui/teamwork/heatmap/{{ project_id }}" alt="Heatmap" style="max-width:100%;height:auto;border:1px solid #ccc;">
+    {% else %}
+    <p>No project selected</p>
+    {% endif %}
+
+    <table>
+        <thead>
+            <tr>
+                <th>Task</th>
+                <th>Decision</th>
+                <th>Consensus</th>
+                <th>Quorum</th>
+                <th>Votes</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for r in records %}
+            <tr>
+                <td>{{ r.task_id }}</td>
+                <td>{{ r.result["decision"] }}</td>
+                <td>{{ r.result["consensus"] }}</td>
+                <td>{{ r.result["quorum"] }}</td>
+                <td>
+                    <ul>
+                        {% for v in r.votes %}
+                        <li>{{ v["voter_id"] }} → {{ v["value"] }}</li>
+                        {% endfor %}
+                    </ul>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>
+
+
+
+
