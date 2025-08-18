@@ -22,6 +22,9 @@ from level2.teamwork.teamwork_aggregator import TeamworkAggregator
 from level2.analytics.analytics_aggregator import AnalyticsAggregator
 from level2.visualization.visualization_aggregator import VisualizationAggregator
 from pipelines.second_level_pipeline import SecondLevelPipeline
+from pipelines.modality_processing_pipeline import ModalityProcessingPipeline
+from pipelines.data_manipulation_pipeline import DataManipulationPipeline
+from pipelines.data_output_pipeline import DataOutputPipeline
 
 class FirstLevelPipeline:
     """
@@ -29,11 +32,9 @@ class FirstLevelPipeline:
     """
 
     def __init__(self):
-        self.prioritization = PrioritizationAggregator()
-        self.strategy = StrategyAggregator()
-        self.teamwork = TeamworkAggregator()
-        self.analytics = AnalyticsAggregator()
-        self.visualization = VisualizationAggregator()
+        self.modality_processing = ModalityProcessingPipeline()
+        self.data_manipulation = DataManipulationPipeline()
+        self.data_output = DataOutputPipeline()
         self.second_level = SecondLevelPipeline()
 
     async def run(self, tasks: List[Dict[str, Any]]) -> Dict[str, Any]:
@@ -44,15 +45,20 @@ class FirstLevelPipeline:
         """
         results = {}
 
-        # Пример базовой обработки задач
-        results["prioritization"] = await self.prioritization.run(tasks)
-        results["strategy"] = await self.strategy.run(tasks)
-        results["teamwork"] = await self.teamwork.run(tasks)
-        results["analytics"] = await self.analytics.run(tasks)
-        results["visualization"] = await self.visualization.run(tasks)
+        # Обработка модальностей
+        cleaned_tasks = await self.modality_processing.run(tasks)
+        results["modality_processing"] = cleaned_tasks
+
+        # Манипуляция данными
+        manipulated_tasks = await self.data_manipulation.run(cleaned_tasks)
+        results["data_manipulation"] = manipulated_tasks
+
+        # Вывод данных
+        prepared_tasks = await self.data_output.run(manipulated_tasks)
+        results["data_output"] = prepared_tasks
 
         # Запуск второго уровня анализа
-        results["second_level"] = await self.second_level.run(tasks)
+        results["second_level"] = await self.second_level.run(prepared_tasks)
 
         return results
 
