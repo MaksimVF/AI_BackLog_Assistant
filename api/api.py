@@ -20,6 +20,9 @@
 
 
 
+
+
+
 from fastapi import FastAPI, HTTPException, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
@@ -27,14 +30,27 @@ from pipelines.first_level_pipeline import FirstLevelPipeline
 from pipelines.second_level_pipeline import SecondLevelPipeline
 from db.session import get_async_session
 from db.models import Task, Run, Result
-from db.repo import TaskRepo, RunRepo, ResultRepo
+from db.repo_optimized import TaskRepo, RunRepo, ResultRepo
 import logging
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
+from fastapi.responses import ORJSONResponse
 
 # Настройка логгера
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
-app = FastAPI()
+app = FastAPI(default_response_class=ORJSONResponse)
+
+# Middleware для CORS и GZip
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 @app.post("/run_pipeline")
 async def run_pipeline(tasks: List[dict], session: AsyncSession = Depends(get_async_session)):
@@ -115,6 +131,8 @@ async def get_results(session: AsyncSession = Depends(get_async_session)):
     except Exception as e:
         logger.error(f"Error getting results: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
 
 
 
