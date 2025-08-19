@@ -74,6 +74,11 @@ This document summarizes the implementation of Level 2 (Deep Analysis) for the A
 - ✅ Base interfaces
 - ✅ RICE scoring agent
 - ✅ MoSCoW scoring agent
+- ✅ WSJF scoring agent
+- ✅ Kano scoring agent
+- ✅ Value/Effort scoring agent
+- ✅ Opportunity scoring agent
+- ✅ Stack ranking agent
 - ✅ Weighted aggregation
 - ✅ Repository interface
 - ✅ Mock repository for testing
@@ -83,10 +88,7 @@ This document summarizes the implementation of Level 2 (Deep Analysis) for the A
 - ✅ Test suite
 
 ### Components to Implement
-- ⬜ Kano scoring agent
-- ⬜ WSJF scoring agent
 - ⬜ Risk scoring agent
-- ⬜ Value/Effort scoring agent
 - ⬜ Weaviate repository (full implementation)
 - ⬜ PostgreSQL repository
 - ⬜ Advanced aggregation methods
