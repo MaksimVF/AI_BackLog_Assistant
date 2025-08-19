@@ -3,8 +3,9 @@
 
 from typing import Dict, Tuple
 from level2.dto import Task, AnalysisConfig
+from .base import BaseScoringAgent
 
-class OpportunityScoringAgent:
+class OpportunityScoringAgent(BaseScoringAgent):
     """
     Агент для Opportunity Scoring:
     – Оценивает фичу по двум осям: Importance (важность) и Satisfaction (удовлетворённость текущим решением).

@@ -2,8 +2,9 @@
 
 from typing import Dict, Tuple
 from level2.dto import Task, AnalysisConfig
+from .base import BaseScoringAgent
 
-class ValueVsEffortAgent:
+class ValueVsEffortAgent(BaseScoringAgent):
     """
     Агент для матричного анализа Value vs Effort.
     Идея: высокая ценность при низких усилиях = top priority.

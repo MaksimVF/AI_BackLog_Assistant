@@ -1,8 +1,9 @@
 
 from typing import Dict, Tuple
 from level2.dto import Task, AnalysisConfig
+from .base import BaseScoringAgent
 
-class StackRankingAgent:
+class StackRankingAgent(BaseScoringAgent):
     """
     Агент для упорядочивания задач по пользовательскому приоритету.
     Основа — явные приоритеты (0–100) или голосование стейкхолдеров.
