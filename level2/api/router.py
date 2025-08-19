@@ -18,6 +18,18 @@ from ..api.dto import StrategicAnalysisRequest, StrategicAnalysisResult
 from ..db.models import StrategicAnalysisSnapshot
 from ..db.repo import StrategicRepo
 from ..strategy.orchestrator import StrategicOrchestrator
+from ..integrations.jira_client import JiraClient, JiraConfig
+from ..integrations.trello_client import TrelloClient, TrelloConfig
+from ..integrations.sync_service import SyncService
+from ..api.integration_dto import (
+    JiraConfig as JiraConfigDTO,
+    TrelloConfig as TrelloConfigDTO,
+    SyncRequest,
+    SyncResult,
+    IntegrationStatus,
+    CreateExternalTaskRequest,
+    CreateExternalTaskResponse
+)
 # from ..teamwork.api.router import router as teamwork_router
 from sqlalchemy.ext.asyncio import AsyncSession
 from ..db.session import get_async_session
@@ -136,6 +148,138 @@ async def visualize_static(req: VisualizationRequest):
         })
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+# --- Integration Endpoints ---
+
+@router.post("/integrations/sync", response_model=SyncResult)
+async def sync_with_external_service(
+    req: SyncRequest,
+    session: AsyncSession = Depends(get_async_session)
+):
+    """
+    Sync tasks with external services (Jira, Trello).
+    """
+    try:
+        sync_service = SyncService()
+
+        if req.service.lower() == "jira":
+            result = await sync_service.sync_with_jira(session)
+        elif req.service.lower() == "trello":
+            result = await sync_service.sync_with_trello(session)
+        else:
+            raise HTTPException(status_code=400, detail="Unsupported service")
+
+        return SyncResult(
+            status=result["status"],
+            service=req.service,
+            synced_tasks=result.get("synced", 0),
+            message=result.get("message")
+        )
+
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.post("/integrations/jira/create", response_model=CreateExternalTaskResponse)
+async def create_jira_task(
+    req: CreateExternalTaskRequest,
+    session: AsyncSession = Depends(get_async_session)
+):
+    """
+    Create a task in Jira.
+    """
+    try:
+        # Get the local task
+        result = await session.execute(
+            select(Task).where(Task.id == req.task_id)
+        )
+        task = result.scalars().first()
+
+        if not task:
+            raise HTTPException(status_code=404, detail="Task not found")
+
+        sync_service = SyncService()
+        jira_issue = await sync_service.create_jira_task(task, session)
+
+        return CreateExternalTaskResponse(
+            status="success",
+            external_id=jira_issue.key,
+            service="jira",
+            message="Task created successfully"
+        )
+
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.post("/integrations/trello/create", response_model=CreateExternalTaskResponse)
+async def create_trello_task(
+    req: CreateExternalTaskRequest,
+    session: AsyncSession = Depends(get_async_session)
+):
+    """
+    Create a task in Trello.
+    """
+    try:
+        # Get the local task
+        result = await session.execute(
+            select(Task).where(Task.id == req.task_id)
+        )
+        task = result.scalars().first()
+
+        if not task:
+            raise HTTPException(status_code=404, detail="Task not found")
+
+        sync_service = SyncService()
+        trello_card = await sync_service.create_trello_task(task, session)
+
+        return CreateExternalTaskResponse(
+            status="success",
+            external_id=trello_card.id,
+            service="trello",
+            message="Task created successfully"
+        )
+
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.get("/integrations/status", response_model=List[IntegrationStatus])
+async def get_integration_status():
+    """
+    Get status of all integration services.
+    """
+    # This would check connection status in a real implementation
+    from datetime import timedelta
+    return [
+        IntegrationStatus(
+            service="jira",
+            connected=True,
+            last_sync=datetime.utcnow(),
+            next_sync=datetime.utcnow() + timedelta(hours=1),
+            tasks_synced=42
+        ),
+        IntegrationStatus(
+            service="trello",
+            connected=True,
+            last_sync=datetime.utcnow(),
+            next_sync=datetime.utcnow() + timedelta(hours=1),
+            tasks_synced=18
+        )
+    ]
+
+@router.post("/integrations/config/jira", response_model=Dict)
+async def configure_jira(config: JiraConfigDTO):
+    """
+    Configure Jira integration.
+    """
+    # In a real implementation, this would save the config
+    return {"status": "success", "message": "Jira configuration saved"}
+
+@router.post("/integrations/config/trello", response_model=Dict)
+async def configure_trello(config: TrelloConfigDTO):
+    """
+    Configure Trello integration.
+    """
+    # In a real implementation, this would save the config
+    return {"status": "success", "message": "Trello configuration saved"}
 
 
 

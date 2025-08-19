@@ -19,7 +19,13 @@ redis
 python-dotenv
 spacy
 
+
+
 networkx
+sqlalchemy[asyncio]
+asyncpg
+
+
 plotly
 pandas
 
