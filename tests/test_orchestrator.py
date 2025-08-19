@@ -6,9 +6,11 @@ import pytest
 from datetime import datetime
 from level2.dto import Task, AnalysisConfig
 from level2.scoring.orchestrator import PriorityOrchestrator
+from level2.pipeline.orchestrator import Level2Orchestrator
 from level2.scoring.stack_ranking import StackRankingAgent
 from level2.scoring.value_vs_effort import ValueVsEffortAgent
 from level2.scoring.opportunity_scoring import OpportunityScoringAgent
+from level2.repository.mock_repo import MockRepository
 
 @pytest.fixture
 def cfg():
@@ -136,5 +138,82 @@ def test_orchestrator_weights(cfg, orchestrator):
     assert weights["STACK_RANKING"] == 2.0
     assert weights["VALUE_EFFORT"] == 0.5
     assert weights["OPPORTUNITY"] == 1.0
+
+def test_level2_orchestrator_integration():
+    """Test the Level2Orchestrator with all registered agents"""
+    repo = MockRepository()
+
+    # Create test tasks
+    tasks = [
+        Task(
+            id="task1",
+            project_id="test_project",
+            title="High value, low effort task",
+            metadata={
+                "value": "9",
+                "effort": "2",
+                "importance": "8",
+                "satisfaction": "3",
+                "priority": "85",
+                "moscow": "must"
+            },
+            created_at=datetime.now()
+        ),
+        Task(
+            id="task2",
+            project_id="test_project",
+            title="Medium priority task",
+            metadata={
+                "value": "5",
+                "effort": "5",
+                "importance": "6",
+                "satisfaction": "4",
+                "priority": "50",
+                "moscow": "should"
+            },
+            created_at=datetime.now()
+        )
+    ]
+
+    repo.tasks = tasks
+
+    # Create orchestrator
+    orchestrator = Level2Orchestrator(repo)
+
+    # Create analysis config with all available methods
+    config = AnalysisConfig(
+        methods=["RICE", "MOSCOW", "WSJF", "KANO", "VALUE_EFFORT", "OPPORTUNITY", "STACK_RANKING"],
+        weights={
+            "RICE": 1.0,
+            "MOSCOW": 0.8,
+            "WSJF": 1.0,
+            "KANO": 1.0,
+            "VALUE_EFFORT": 1.0,
+            "OPPORTUNITY": 1.0,
+            "STACK_RANKING": 0.9
+        }
+    )
+
+    # Run analysis
+    result = orchestrator.analyze_project("test_project", config)
+
+    # Verify results
+    assert result.project_id == "test_project"
+    assert len(result.tasks) == 2
+
+    # Check that all methods are represented
+    for task_result in result.tasks:
+        method_names = [ms.method for ms in task_result.method_scores]
+        expected_methods = ["RICE", "MOSCOW", "WSJF", "KANO", "VALUE_EFFORT", "OPPORTUNITY", "STACK_RANKING"]
+
+        # All requested methods should be present
+        for method in expected_methods:
+            assert method in method_names
+
+        # Check that combined score is calculated
+        assert task_result.combined_score is not None
+
+        # Check that labels are aggregated
+        assert len(task_result.labels) > 0
 
 
