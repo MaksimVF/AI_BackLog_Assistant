@@ -9,6 +9,9 @@ from ..scoring.rice import RiceAgent
 from ..scoring.moscow import MoSCoWAgent
 from ..scoring.wsjf import WSJFAgent
 from ..scoring.kano import KanoAgent
+from ..scoring.value_vs_effort import ValueVsEffortAgent
+from ..scoring.opportunity_scoring import OpportunityScoringAgent
+from ..scoring.stack_ranking import StackRankingAgent
 from ..aggregator.weigh_combiner import combine_scores
 
 AGENTS_REGISTRY = {
@@ -16,6 +19,9 @@ AGENTS_REGISTRY = {
     "MOSCOW": MoSCoWAgent(),
     "WSJF": WSJFAgent(),
     "KANO": KanoAgent(),
+    "VALUE_EFFORT": ValueVsEffortAgent(),
+    "OPPORTUNITY": OpportunityScoringAgent(),
+    "STACK_RANKING": StackRankingAgent(),
 }
 
 class Level2Orchestrator:
