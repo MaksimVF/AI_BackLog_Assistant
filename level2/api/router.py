@@ -4,6 +4,7 @@
 
 
 from fastapi import APIRouter, HTTPException, Depends
+from fastapi.responses import HTMLResponse, JSONResponse
 from datetime import datetime
 
 from pydantic import BaseModel
@@ -20,6 +21,7 @@ from ..strategy.orchestrator import StrategicOrchestrator
 # from ..teamwork.api.router import router as teamwork_router
 from sqlalchemy.ext.asyncio import AsyncSession
 from ..db.session import get_async_session
+from ..visualization.visualization_aggregator import VisualizationAggregator
 import weaviate
 
 
@@ -91,6 +93,49 @@ async def get_snapshots(project_id: str, task_id: str = None, session: AsyncSess
     repo = StrategicRepo(session)
     snaps = await repo.get_snapshots(project_id, task_id)
     return snaps
+
+class VisualizationRequest(BaseModel):
+    tasks: List[dict]
+    output_format: str = "plotly"  # or "static"
+
+@router.post("/visualize", response_class=HTMLResponse)
+async def visualize_data(req: VisualizationRequest):
+    """
+    Generate visualizations from task data.
+    Returns HTML with embedded Plotly visualizations.
+    """
+    try:
+        viz = VisualizationAggregator()
+        results = viz.run(req.tasks, output_format=req.output_format)
+
+        if req.output_format == "static":
+            # Return JSON with static image data
+            return JSONResponse(content={
+                "status": "success",
+                "visualizations": results
+            })
+
+        # Return HTML with interactive visualizations
+        html_content = viz.to_html(results)
+        return HTMLResponse(content=html_content)
+
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.post("/visualize/static", response_class=JSONResponse)
+async def visualize_static(req: VisualizationRequest):
+    """
+    Generate static visualizations (PNG images).
+    """
+    try:
+        viz = VisualizationAggregator()
+        results = viz.run(req.tasks, output_format="static")
+        return JSONResponse(content={
+            "status": "success",
+            "visualizations": results
+        })
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 
