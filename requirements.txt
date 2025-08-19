@@ -9,11 +9,20 @@ pillow
 opencv-python
 pathlib
 weaviate-client
+
+
 rq
+hiredis
+
+
 redis
 python-dotenv
 spacy
+
 networkx
+plotly
+pandas
+
 
 hiredis
 watchdog
