@@ -26,14 +26,14 @@ class LangGraphTriggerAgent:
     def __init__(self):
         # Default trigger thresholds
         self.thresholds = {
-            'score': 0.7,  # Trigger if initial score > 0.7
+            'score': 0.6,  # Trigger if initial score > 0.6 (lower for hybrid classifier)
             'batch_size': 10,  # Trigger if batch size > 10
             'time_interval': 3600,  # Trigger every hour (in seconds)
             'manual_override': True,  # Allow manual triggering
             'score_weight': 0.7,  # Higher score weight
             'batch_weight': 0.15,
             'time_weight': 0.05,
-            'complexity_threshold': 0.5  # Lower threshold
+            'complexity_threshold': 0.4  # Lower threshold for hybrid classifier
         }
 
         # Track batch and time
@@ -149,13 +149,32 @@ class LangGraphTriggerAgent:
         """Analyze complexity of the classified data"""
         try:
             classified_data = state['classified_data']
-            content = classified_data.get('content', {})
-            text = content.get('text', '')
+
+            # Handle different content formats
+            if isinstance(classified_data, dict):
+                if 'content' in classified_data:
+                    content = classified_data['content']
+                    if isinstance(content, dict):
+                        text = content.get('text', '')
+                    else:
+                        text = str(content)
+                else:
+                    text = str(classified_data)
+            else:
+                text = str(classified_data)
 
             # Simple complexity metrics (can be enhanced with NLP)
             word_count = len(text.split())
-            entity_count = len(classified_data.get('entities', []))
-            relationship_count = len(classified_data.get('relationships', []))
+
+            # Get metadata if available
+            metadata = classified_data.get('metadata', {})
+            entity_count = 0
+            relationship_count = 0
+
+            if 'entities' in metadata:
+                entity_count = len(metadata['entities'])
+            if 'relationships' in metadata:
+                relationship_count = len(metadata['relationships'])
 
             # Calculate complexity score (0-1 range)
             max_words = 1000  # Example threshold
@@ -164,11 +183,13 @@ class LangGraphTriggerAgent:
                            (relationship_count / 20) * 0.3, 1)
 
             # Apply weight from thresholds
-            weighted_complexity = complexity * (1 - sum([
+            remaining_weight = 1 - sum([
                 self.thresholds['score_weight'],
                 self.thresholds['batch_weight'],
                 self.thresholds['time_weight']
-            ]))
+            ])
+
+            weighted_complexity = complexity * remaining_weight
 
             # Update state
             state['calculation_results']['complexity_factor'] = weighted_complexity
