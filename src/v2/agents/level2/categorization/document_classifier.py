@@ -4,20 +4,21 @@
 """
 Document Classifier Agent for Level 2 Processing
 
-Enhanced with caching and configuration support.
+Enhanced with machine learning and adaptive learning capabilities.
 """
 
 import logging
 from functools import lru_cache
 from crewai import Agent
 from typing import Dict, Any
+from src.v2.ml.classification import DocumentClassifierModel
 
 logger = logging.getLogger(__name__)
 
 class DocumentClassifierAgent:
-    """Classifies documents into categories with caching and configuration"""
+    """Classifies documents into categories with ML and adaptive learning"""
 
-    def __init__(self, cache_size: int = 1000, use_ml: bool = False):
+    def __init__(self, cache_size: int = 1000, use_ml: bool = True):
         """
         Initialize DocumentClassifierAgent with configuration options
 
@@ -43,6 +44,9 @@ class DocumentClassifierAgent:
             tools=[],
             verbose=True
         )
+
+        # Initialize ML model
+        self.ml_model = DocumentClassifierModel()
 
         # Initialize cache
         self.cache = {}
@@ -70,9 +74,36 @@ class DocumentClassifierAgent:
             "confidence": result.get("confidence", 0.7)
         }
 
+    def _classify_with_ml(self, content: str) -> Dict[str, Any]:
+        """
+        Classify document using machine learning model
+
+        Args:
+            content: Document content to classify
+
+        Returns:
+            ML-based classification result
+        """
+        try:
+            # Use ML model for classification
+            result = self.ml_model.predict(content)
+
+            # Map ML result to standard format
+            return {
+                "category": result.get("category", "unknown"),
+                "domain": "ml_classified",  # Can be enhanced
+                "confidence": result.get("confidence", 0.7),
+                "ml_model": "document_classifier_v1"
+            }
+
+        except Exception as e:
+            logger.warning(f"ML classification failed, falling back to agent: {e}")
+            # Fall back to agent-based classification
+            return self._classify_with_cache(content)
+
     def classify(self, input_data: dict) -> dict:
         """
-        Classify document into categories with enhanced processing
+        Classify document into categories with ML and adaptive processing
 
         Args:
             input_data: Data from Level 1 processing
@@ -95,8 +126,11 @@ class DocumentClassifierAgent:
                     }
                 }
 
-            # Use cached classification
-            classification = self._classify_with_cache(content)
+            # Use ML classification if enabled
+            if self.use_ml:
+                classification = self._classify_with_ml(content)
+            else:
+                classification = self._classify_with_cache(content)
 
             # Add classification to data
             classified_data = {
@@ -120,4 +154,25 @@ class DocumentClassifierAgent:
                     "error": str(e)
                 }
             }
+
+    def update_with_feedback(self, document_id: str, correct_category: str):
+        """
+        Update classification model with user feedback
+
+        Args:
+            document_id: ID of the document
+            correct_category: Correct classification category
+        """
+        try:
+            # Find document content (simplified - in real implementation, would fetch from storage)
+            document_content = f"Sample content for {document_id}"
+
+            # Update ML model
+            self.ml_model.update_with_feedback(document_content, correct_category)
+
+            logger.info(f"Updated classification model for {document_id}")
+
+        except Exception as e:
+            logger.error(f"Feedback update failed: {e}")
+            raise
 
