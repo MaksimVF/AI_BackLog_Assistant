@@ -82,6 +82,9 @@ The Level 1 pipeline consists of several agents that work together to process in
 - ✅ Adaptive learning from user feedback
 - ✅ Sentiment analysis and contradiction detection
 - ✅ Quality scoring with ML models
+- ✅ Interactive feedback collection
+- ✅ Clarifying questions for ambiguous classifications
+- ✅ Continuous improvement engine
 
 ### Components to Implement
 
@@ -106,6 +109,8 @@ The Level 2 pipeline processes data from Level 1 through categorization, priorit
 ```python
 from src.v2.pipelines.level2 import Level2Pipeline
 from src.v2.ml.classification import DocumentClassifierModel
+from src.v2.feedback.feedback_collector import FeedbackCollector
+from src.v2.feedback.interactive_agent import InteractiveFeedbackAgent
 
 # Initialize Level 2 pipeline with ML capabilities
 level2_pipeline = Level2Pipeline(max_workers=8)
@@ -141,6 +146,23 @@ classifier.train(
     labels=["urgent", "important"]
 )
 print("ML model trained")
+
+# Use feedback system
+feedback_collector = FeedbackCollector()
+feedback_collector.collect_classification_feedback(
+    document_id="doc123",
+    user_category="urgent",
+    original_category="important",
+    confidence=0.7
+)
+
+# Use interactive feedback
+interactive_agent = InteractiveFeedbackAgent()
+question = interactive_agent.ask_clarifying_question(
+    document_id="doc123",
+    classification={"category": "important", "confidence": 0.5}
+)
+print(f"Clarifying question: {question['question']}")
 ```
 
 ### Example Output
