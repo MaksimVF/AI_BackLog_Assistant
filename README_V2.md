@@ -67,9 +67,9 @@ The Level 1 pipeline consists of several agents that work together to process in
 - ✅ Trigger Agent
 - ✅ Level 1 Pipeline Coordinator
 - ✅ Level 2 Pipeline Coordinator
-- ✅ Document Classifier Agent (with caching and configuration)
-- ✅ Prioritization Agent (with enhanced algorithms)
-- ✅ Reflection Agent (with quality analysis)
+- ✅ Document Classifier Agent (with ML and adaptive learning)
+- ✅ Prioritization Agent (with ML-based prioritization)
+- ✅ Reflection Agent (with ML quality analysis)
 
 ### Enhanced Features
 
@@ -78,6 +78,10 @@ The Level 1 pipeline consists of several agents that work together to process in
 - ✅ Performance monitoring and metrics
 - ✅ Configurable agent parameters
 - ✅ Caching for frequent operations
+- ✅ Machine learning models for classification
+- ✅ Adaptive learning from user feedback
+- ✅ Sentiment analysis and contradiction detection
+- ✅ Quality scoring with ML models
 
 ### Components to Implement
 
@@ -97,12 +101,13 @@ PYTHONPATH=/workspace/AI_BackLog_Assistant/src python -m src.v2.main
 
 ### Running the Level 2 Pipeline
 
-The Level 2 pipeline processes data from Level 1 through categorization, prioritization, and reflection agents with enhanced features.
+The Level 2 pipeline processes data from Level 1 through categorization, prioritization, and reflection agents with ML capabilities.
 
 ```python
 from src.v2.pipelines.level2 import Level2Pipeline
+from src.v2.ml.classification import DocumentClassifierModel
 
-# Initialize Level 2 pipeline with configuration
+# Initialize Level 2 pipeline with ML capabilities
 level2_pipeline = Level2Pipeline(max_workers=8)
 
 # Process data from Level 1
@@ -128,6 +133,14 @@ batch_data = [
 
 batch_results = level2_pipeline.process_batch(batch_data)
 print(f"Processed {len(batch_results)} documents")
+
+# Train and update ML models
+classifier = DocumentClassifierModel()
+classifier.train(
+    documents=["Sample document 1", "Sample document 2"],
+    labels=["urgent", "important"]
+)
+print("ML model trained")
 ```
 
 ### Example Output

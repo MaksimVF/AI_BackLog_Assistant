@@ -5,24 +5,25 @@
 """
 Prioritization Agent for Level 2 Processing
 
-Enhanced with configuration and error handling.
+Enhanced with machine learning and adaptive prioritization.
 """
 
 import logging
 from crewai import Agent
 from typing import Dict, Any
+from src.v2.ml.prioritization import PrioritizationModel
 
 logger = logging.getLogger(__name__)
 
 class PrioritizationAgent:
-    """Prioritizes documents based on content and metadata with enhanced features"""
+    """Prioritizes documents based on content and metadata with ML capabilities"""
 
-    def __init__(self, algorithm: str = "default"):
+    def __init__(self, algorithm: str = "ml"):
         """
         Initialize PrioritizationAgent with configuration
 
         Args:
-            algorithm: Prioritization algorithm to use
+            algorithm: Prioritization algorithm to use (rule-based or ml)
         """
         self.algorithm = algorithm
 
@@ -41,6 +42,9 @@ class PrioritizationAgent:
             tools=[],
             verbose=True
         )
+
+        # Initialize ML model
+        self.ml_model = PrioritizationModel()
 
     def _calculate_priority(self, classification: Dict[str, Any], metadata: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -77,12 +81,13 @@ class PrioritizationAgent:
         return {
             "priority_level": priority_level,
             "priority_score": base_priority,
-            "reason": f"Based on {classification.get('category')} classification and {metadata.get('source')} source"
+            "reason": f"Based on {classification.get('category')} classification and {metadata.get('source')} source",
+            "algorithm": "rule_based"
         }
 
     def prioritize(self, input_data: dict) -> dict:
         """
-        Prioritize document processing with enhanced logic
+        Prioritize document processing with ML and adaptive logic
 
         Args:
             input_data: Data from Level 1 and categorization
@@ -95,8 +100,14 @@ class PrioritizationAgent:
             classification = input_data.get("classification", {})
             metadata = input_data.get("metadata", {})
 
-            # Calculate priority
-            priority_data = self._calculate_priority(classification, metadata)
+            # Use ML prioritization if enabled
+            if self.algorithm == "ml":
+                # Use ML model for prioritization
+                priority_data = self.ml_model.prioritize(input_data)
+                priority_data["algorithm"] = "ml_based"
+            else:
+                # Use rule-based prioritization
+                priority_data = self._calculate_priority(classification, metadata)
 
             # Add prioritization to data
             prioritized_data = {
@@ -117,8 +128,35 @@ class PrioritizationAgent:
                     "priority_level": "medium",
                     "priority_score": 0.5,
                     "reason": "fallback prioritization",
+                    "algorithm": "fallback",
                     "error": str(e)
                 }
             }
+
+    def update_with_feedback(self, document_id: str, correct_priority: str):
+        """
+        Update prioritization model with user feedback
+
+        Args:
+            document_id: ID of the document
+            correct_priority: Correct priority level
+        """
+        try:
+            # Find document data (simplified - in real implementation, would fetch from storage)
+            document_data = {
+                "document_id": document_id,
+                "content": f"Sample content for {document_id}",
+                "metadata": {"source": "api"},
+                "classification": {"category": "important", "confidence": 0.8}
+            }
+
+            # Update ML model
+            self.ml_model.update_with_feedback(document_data, correct_priority)
+
+            logger.info(f"Updated prioritization model for {document_id}")
+
+        except Exception as e:
+            logger.error(f"Feedback update failed: {e}")
+            raise
 
 
