@@ -85,6 +85,9 @@ The Level 1 pipeline consists of several agents that work together to process in
 - ✅ Interactive feedback collection
 - ✅ Clarifying questions for ambiguous classifications
 - ✅ Continuous improvement engine
+- ✅ LangGraph-based agents for contextual understanding
+- ✅ Graph-based classification and prioritization
+- ✅ Enhanced relationship detection
 
 ### Components to Implement
 
@@ -216,6 +219,40 @@ batch_data = [
 ]
 
 batch_results = level3_pipeline.process_batch(batch_data)
+print(f"Processed {len(batch_results)} documents")
+```
+
+### Running the LangGraph Pipeline
+
+The LangGraph pipeline processes data from Level 1 through graph-based agents.
+
+```python
+from src.v2.pipelines.langgraph_pipeline import LangGraphPipeline
+
+# Initialize LangGraph pipeline
+langgraph_pipeline = LangGraphPipeline(max_workers=8)
+
+# Example data from Level 1
+level1_data = {
+    "document_id": "doc123",
+    "content": "Sample document content",
+    "metadata": {
+        "source": "api",
+        "modality": "text"
+    }
+}
+
+# Process through LangGraph pipeline
+result = langgraph_pipeline.process(level1_data)
+print(result)
+
+# Process batch of documents in parallel
+batch_data = [
+    {"document_id": f"doc{i}", "content": f"Content {i}", "metadata": {"source": "api"}}
+    for i in range(5)
+]
+
+batch_results = langgraph_pipeline.process_batch(batch_data)
 print(f"Processed {len(batch_results)} documents")
 ```
 
