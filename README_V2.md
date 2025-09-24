@@ -88,7 +88,7 @@ The Level 1 pipeline consists of several agents that work together to process in
 
 ### Components to Implement
 
-- ⬜ Level 3 Agents and Pipeline
+- ✅ Level 3 Agents and Pipeline
 - ⬜ Enhanced modality processors with actual implementations
 - ⬜ Integration with storage systems
 - ⬜ API endpoints
@@ -163,6 +163,60 @@ question = interactive_agent.ask_clarifying_question(
     classification={"category": "important", "confidence": 0.5}
 )
 print(f"Clarifying question: {question['question']}")
+```
+
+### Running the Level 3 Pipeline
+
+The Level 3 pipeline processes data from Level 2 through advanced analysis agents.
+
+```python
+from src.v3.pipelines.level3_pipeline import Level3Pipeline
+
+# Initialize Level 3 pipeline
+level3_pipeline = Level3Pipeline(max_workers=8)
+
+# Example data from Level 2
+level2_data = {
+    "document_id": "doc123",
+    "content": "Sample document content",
+    "metadata": {
+        "source": "api",
+        "modality": "text"
+    },
+    "classification": {
+        "category": "important",
+        "domain": "system",
+        "confidence": 0.8
+    },
+    "prioritization": {
+        "priority_level": "high",
+        "priority_score": 0.85
+    },
+    "reflection": {
+        "quality_score": 0.75,
+        "issues": ["Basic analysis completed"],
+        "improvement_areas": ["Enhance with NLP models"]
+    }
+}
+
+# Process through Level 3
+result = level3_pipeline.process(level2_data)
+print(result)
+
+# Process batch of documents in parallel
+batch_data = [
+    {
+        "document_id": f"doc{i}",
+        "content": f"Content {i}",
+        "metadata": {"source": "api"},
+        "classification": {"category": "important", "confidence": 0.8},
+        "prioritization": {"priority_level": "high", "priority_score": 0.85}
+    }
+    for i in range(5)
+]
+
+batch_results = level3_pipeline.process_batch(batch_data)
+print(f"Processed {len(batch_results)} documents")
 ```
 
 ### Example Output
