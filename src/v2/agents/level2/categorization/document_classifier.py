@@ -4,7 +4,7 @@
 """
 Document Classifier Agent for Level 2 Processing
 
-Enhanced with machine learning and adaptive learning capabilities.
+Enhanced with machine learning, adaptive learning, and interactive feedback capabilities.
 """
 
 import logging
@@ -12,11 +12,12 @@ from functools import lru_cache
 from crewai import Agent
 from typing import Dict, Any
 from src.v2.ml.classification import DocumentClassifierModel
+from src.v2.feedback.interactive_agent import InteractiveFeedbackAgent
 
 logger = logging.getLogger(__name__)
 
 class DocumentClassifierAgent:
-    """Classifies documents into categories with ML and adaptive learning"""
+    """Classifies documents into categories with ML, adaptive learning, and feedback"""
 
     def __init__(self, cache_size: int = 1000, use_ml: bool = True):
         """
@@ -47,6 +48,9 @@ class DocumentClassifierAgent:
 
         # Initialize ML model
         self.ml_model = DocumentClassifierModel()
+
+        # Initialize feedback agent
+        self.feedback_agent = InteractiveFeedbackAgent()
 
         # Initialize cache
         self.cache = {}
@@ -103,7 +107,7 @@ class DocumentClassifierAgent:
 
     def classify(self, input_data: dict) -> dict:
         """
-        Classify document into categories with ML and adaptive processing
+        Classify document into categories with ML, adaptive processing, and feedback
 
         Args:
             input_data: Data from Level 1 processing
@@ -137,6 +141,15 @@ class DocumentClassifierAgent:
                 **input_data,
                 "classification": classification
             }
+
+            # Check if feedback is needed (low confidence)
+            if classification.get("confidence", 0) < 0.6:
+                # Generate clarifying question
+                question = self.feedback_agent.ask_clarifying_question(
+                    input_data.get("document_id", "unknown"),
+                    classification
+                )
+                classified_data["feedback_question"] = question
 
             logger.info(f"Classified document {input_data.get('document_id', 'unknown')} as {classification['category']}")
 
@@ -175,4 +188,33 @@ class DocumentClassifierAgent:
         except Exception as e:
             logger.error(f"Feedback update failed: {e}")
             raise
+
+    def request_feedback(self, document_id: str, classification: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Request user feedback on classification
+
+        Args:
+            document_id: ID of the document
+            classification: Classification result
+
+        Returns:
+            Feedback request result
+        """
+        try:
+            # Generate clarifying question
+            question = self.feedback_agent.ask_clarifying_question(document_id, classification)
+
+            logger.info(f"Requested feedback for {document_id}")
+
+            return {
+                "status": "feedback_requested",
+                "question": question
+            }
+
+        except Exception as e:
+            logger.error(f"Feedback request failed: {e}")
+            return {
+                "status": "error",
+                "error": str(e)
+            }
 
