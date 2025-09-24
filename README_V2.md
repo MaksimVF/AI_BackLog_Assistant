@@ -66,10 +66,13 @@ The Level 1 pipeline consists of several agents that work together to process in
 - ✅ Content Classifier Agent
 - ✅ Trigger Agent
 - ✅ Level 1 Pipeline Coordinator
+- ✅ Level 2 Pipeline Coordinator
+- ✅ Document Classifier Agent
+- ✅ Prioritization Agent
+- ✅ Reflection Agent
 
 ### Components to Implement
 
-- ⬜ Level 2 Agents and Pipeline
 - ⬜ Level 3 Agents and Pipeline
 - ⬜ Enhanced modality processors with actual implementations
 - ⬜ Integration with storage systems
@@ -82,6 +85,31 @@ The Level 1 pipeline consists of several agents that work together to process in
 ```bash
 cd /workspace/AI_BackLog_Assistant
 PYTHONPATH=/workspace/AI_BackLog_Assistant/src python -m src.v2.main
+```
+
+### Running the Level 2 Pipeline
+
+The Level 2 pipeline processes data from Level 1 through categorization, prioritization, and reflection agents.
+
+```python
+from src.v2.pipelines.level2 import Level2Pipeline
+
+# Initialize Level 2 pipeline
+level2_pipeline = Level2Pipeline()
+
+# Process data from Level 1
+level1_data = {
+    "document_id": "doc123",
+    "content": "Sample document content",
+    "metadata": {
+        "source": "api",
+        "modality": "text"
+    }
+}
+
+# Process through Level 2
+result = level2_pipeline.process(level1_data)
+print(result)
 ```
 
 ### Example Output
